@@ -15,6 +15,7 @@ export interface CinematicTheme {
   backgroundAlt: string;
   surface: string;
   surfaceHover: string;
+  muted: string;
 
   // Primary colors
   primary: string;
@@ -53,6 +54,7 @@ export interface StoreConfig {
   id: string;
   name: string;
   slug: string;
+  description: string;
   theme: CinematicTheme;
   effects: {
     hasParticles: boolean;
@@ -79,6 +81,7 @@ export const STORES: Record<string, StoreConfig> = {
     id: 'binh-minh',
     name: 'Bình Minh',
     slug: 'binh-minh',
+    description: 'Khoảnh khắc mặt trời vừa ló - Dịu dàng, thơ, ấm áp',
     theme: {
       name: 'Bình Minh',
       slug: 'binh-minh',
@@ -89,6 +92,7 @@ export const STORES: Record<string, StoreConfig> = {
       backgroundAlt: '#FEF3F0',
       surface: '#FFFFFF',
       surfaceHover: '#FFF5F0',
+      muted: '#FEF7F4',
 
       primary: '#E8784A',
       primaryHover: '#D4693B',
@@ -132,6 +136,7 @@ export const STORES: Record<string, StoreConfig> = {
     id: 'ban-mai',
     name: 'Ban Mai',
     slug: 'ban-mai',
+    description: 'Buổi sáng rõ nét - Tươi mới, sáng sủa, thoải mái',
     theme: {
       name: 'Ban Mai',
       slug: 'ban-mai',
@@ -142,6 +147,7 @@ export const STORES: Record<string, StoreConfig> = {
       backgroundAlt: '#F1F5F9',
       surface: '#FFFFFF',
       surfaceHover: '#F8FAFC',
+      muted: '#F1F5F9',
 
       primary: '#0EA5E9',
       primaryHover: '#0284C7',
@@ -185,6 +191,7 @@ export const STORES: Record<string, StoreConfig> = {
     id: 'hoang-hon',
     name: 'Hoàng Hôn',
     slug: 'hoang-hon',
+    description: 'Cuối ngày điện ảnh - Ấm áp, sâu lắng, hoài niệm',
     theme: {
       name: 'Hoàng Hôn',
       slug: 'hoang-hon',
@@ -195,6 +202,7 @@ export const STORES: Record<string, StoreConfig> = {
       backgroundAlt: '#292524',
       surface: '#292524',
       surfaceHover: '#3D3735',
+      muted: '#1C1917',
 
       primary: '#F97316',
       primaryHover: '#EA580C',
@@ -238,6 +246,7 @@ export const STORES: Record<string, StoreConfig> = {
     id: 'da-nguyet',
     name: 'Dạ Nguyệt',
     slug: 'da-nguyet',
+    description: 'Đêm trăng huyền bí - Sang trọng, tĩnh lặng, cuốn hút',
     theme: {
       name: 'Dạ Nguyệt',
       slug: 'da-nguyet',
@@ -248,6 +257,7 @@ export const STORES: Record<string, StoreConfig> = {
       backgroundAlt: '#0F172A',
       surface: '#1E293B',
       surfaceHover: '#334155',
+      muted: '#0F172A',
 
       primary: '#818CF8',
       primaryHover: '#6366F1',

@@ -4,7 +4,8 @@ import { ophimProvider } from "@/providers/ophim";
 import { nguoncProvider } from "@/providers/nguonc";
 import { kkphimProvider } from "@/providers/kkphim";
 import { STORES, STORE_API_MAP } from "@/lib/stores/config";
-import type { ProviderListKind, ProviderMovieInput } from "@/types/catalog";
+import type { ProviderMovieInput } from "@/types/catalog";
+import type { ProviderListKind } from "@/providers/types";
 
 // Map slug -> provider
 const PROVIDER_MAP: Record<string, {

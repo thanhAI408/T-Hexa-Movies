@@ -3,9 +3,15 @@ import { ophimProvider } from "@/providers/ophim";
 import { nguoncProvider } from "@/providers/nguonc";
 import { kkphimProvider } from "@/providers/kkphim";
 import { STORE_API_MAP } from "@/lib/stores/config";
-import type { ProviderDetail } from "@/types/catalog";
+import type { ProviderDetail, ProviderListResult } from "@/types/catalog";
+import type { ProviderListKind } from "@/providers/types";
 
-const PROVIDER_MAP: Record<string, { getMovie: (slug: string) => Promise<ProviderDetail | null> }> = {
+interface MovieProvider {
+  getMovie(slug: string): Promise<ProviderDetail | null>;
+  getList(kind: ProviderListKind, page?: number, limit?: number): Promise<ProviderListResult>;
+}
+
+const PROVIDER_MAP: Record<string, MovieProvider> = {
   vsmov: vsmovProvider,
   ophim: ophimProvider,
   nguonc: nguoncProvider,
@@ -35,7 +41,7 @@ export async function getRelatedMovies(storeId: string, options?: { limit?: numb
   try {
     const result = await provider.getList("latest", 1, options?.limit ?? 12);
     const items = options?.excludeSlug
-      ? result.items.filter((m) => m.providerSlug !== options.excludeSlug)
+      ? result.items.filter((m: any) => m.providerSlug !== options.excludeSlug)
       : result.items;
     return { ...result, items };
   } catch (error) {
