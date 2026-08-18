@@ -1,0 +1,41 @@
+{
+  "status": true,
+  "msg": "",
+  "movie": {
+    "tmdb": {
+      "id": "1307118",
+      "type": "movie",
+      "season": null
+    },
+    "imdb": {
+      "id": "tt32654916"
+    },
+    "modified": {
+      "time": "2026-08-03T13:36:25.000Z"
+    },
+    "_id": "6a7035dee4d6b5786f007613",
+    "name": "Soulm8te",
+    "slug": "soulm8te",
+    "origin_name": "Soulm8te",
+    "type": "single",
+    "thumb_url": "soulm8te-thumb.webp",
+    "poster_url": "soulm8te-poster.webp",
+    "chieurap": false,
+    "year": 2026
+  },
+  "episodes": [
+    {
+      "server_name": "",
+      "is_ai": false,
+      "server_data": [
+        {
+          "name": "",
+          "slug": "",
+          "filename": "",
+          "link_embed": "",
+          "link_m3u8": ""
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "status": true,
+  "msg": "",
+  "movie": {
+    "tmdb": {
+      "id": "718789",
+      "type": "movie",
+      "season": null
+    },
+    "imdb": {
+      "id": "tt10298810"
+    },
+    "modified": {
+      "time": "2022-07-15T15:13:38.000Z"
+    },
+    "_id": "62b2ef3f3e39f9843ca7636a",
+    "name": "Lightyear: Cảnh sát vũ trụ",
+    "slug": "lightyear-canh-sat-vu-tru",
+    "origin_name": "Lightyear",
+    "alternative_names": [],
+    "content": "<p>Buzz Lightyear tìm đường trở về nhà.</p>",
+    "type": "hoathinh",
+    "status": "completed",
+    "thumb_url": "lightyear-canh-sat-vu-tru-thumb.jpg",
+    "poster_url": "lightyear-canh-sat-vu-tru-poster.jpg",
+    "chieurap": true,
+    "time": "110 phút",
+    "episode_current": "Full",
+    "episode_total": "1 Tập",
+    "quality": "HD",
+    "lang": "Vietsub",
+    "year": 2022,
+    "actor": [
+      "Chris Evans"
+    ],
+    "director": [
+      "Angus MacLane"
+    ],
+    "category": [
+      {
+        "name": "Phiêu Lưu",
+        "slug": "phieu-luu"
+      }
+    ],
+    "country": [
+      {
+        "name": "Âu Mỹ",
+        "slug": "au-my"
+      }
+    ]
+  },
+  "episodes": [
+    {
+      "server_name": "Vietsub #1",
+      "is_ai": false,
+      "server_data": [
+        {
+          "name": "Full",
+          "slug": "full",
+          "filename": "Lightyear.2022.1080p.WEBRip.DDP5.1.Atmos.x264-NOGRP",
+          "link_embed": "https://vip.opstream14.com/share/fea427597536f3e21482196d31927037",
+          "link_m3u8": "https://vip.opstream14.com/20220715/18240_3035e3ce/index.m3u8"
+        }
+      ]
+    }
+  ]
+}

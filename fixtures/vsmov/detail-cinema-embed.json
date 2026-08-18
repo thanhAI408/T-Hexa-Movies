@@ -1,0 +1,107 @@
+{
+  "status": true,
+  "msg": "",
+  "movie": {
+    "tmdb": {
+      "type": "movie",
+      "id": "1375646",
+      "season": null,
+      "vote_average": "7.2",
+      "vote_count": 89
+    },
+    "imdb": {
+      "id": "tt34385135"
+    },
+    "created": {
+      "time": "2026-07-24T10:30:14+07:00"
+    },
+    "modified": {
+      "time": "2026-08-06T11:48:43+07:00"
+    },
+    "_id": 50732,
+    "name": "Bầy Xác Sống",
+    "origin_name": "Colony",
+    "slug": "bay-xac-song-178486381421977",
+    "content": "Giáo sư Se Jeong tham dự một hội nghị công nghệ sinh học, nhưng lại chứng kiến ​​nó biến thành thảm họa khi một loại virus đột biến nhanh chóng được giải phóng. Khi dịch bệnh lan rộng và những người nhiễm bệnh bắt đầu biến đổi, chính quyền đã phong tỏa toàn bộ cơ sở.",
+    "type": "single",
+    "status": "completed",
+    "poster_url": "https://vsmov.com/storage/images/jDvxsBemt2Iyslg7qn2WMzgxz23.jpg",
+    "thumb_url": "https://vsmov.com/storage/images/lzI70txBtLH5kCUixYMJQffKkL9.jpg",
+    "trailer_url": null,
+    "time": "123",
+    "episode_current": "Full",
+    "episode_total": "1",
+    "quality": "HD",
+    "lang": "Vietsub",
+    "notify": null,
+    "showtimes": null,
+    "year": 2026,
+    "keywords": [
+      "zombie"
+    ],
+    "view": 160,
+    "chieurap": true,
+    "sub_docquyen": true,
+    "actor": [
+      "Gianna Jun",
+      "Koo Kyo-hwan",
+      "Ji Chang-wook",
+      "Kim Shin-rock",
+      "Shin Hyun-been",
+      "Go Soo",
+      "Lee Jung-ok",
+      "Kim Jong-tae",
+      "Hwang Jae-yeol",
+      "Lee Dam-hee",
+      "Chae Seo-eun",
+      "Kim Sung",
+      "Kim Jae-rok",
+      "Oh Gyeong-hwa",
+      "Choi Gwang-il",
+      "Kim Hyeong-mook",
+      "Hong Seok-bin",
+      "Lee Hyun-kyun",
+      "Lee Kang-wook"
+    ],
+    "director": [
+      "Yeon Sang-ho"
+    ],
+    "category": [
+      {
+        "id": 25,
+        "name": "Phim Nhạc",
+        "slug": "phim-nhac"
+      },
+      {
+        "id": 30,
+        "name": "Hành Động",
+        "slug": "hanh-dong"
+      },
+      {
+        "id": 32,
+        "name": "Kinh Dị",
+        "slug": "kinh-di"
+      }
+    ],
+    "country": [
+      {
+        "id": 10,
+        "name": "Hàn Quốc",
+        "slug": "han-quoc"
+      }
+    ]
+  },
+  "episodes": [
+    {
+      "server_name": "Vietsub\r\n                        #1",
+      "server_data": [
+        {
+          "name": "Full",
+          "slug": "tap-full",
+          "filename": "Full",
+          "link_embed": "https://v1.streamvsmov.com/video/b8d75148-a2b9-4edd-a77a-258357ade31d"
+        }
+      ]
+    }
+  ]
+}

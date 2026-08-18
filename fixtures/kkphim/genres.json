@@ -1,0 +1,12 @@
+{
+  "status": "success",
+  "message": "",
+  "data": {
+    "items": [
+      { "_id": "2fb53017b3be83cd754a08adab3e916c", "name": "Bí Ẩn", "slug": "bi-an" },
+      { "_id": "1bae5183d681b7649f9bf349177f7123", "name": "Chiến Tranh", "slug": "chien-tranh" },
+      { "_id": "37a7b38b6184a5ebd3c43015aa20709d", "name": "Chính Kịch", "slug": "chinh-kich" },
+      { "_id": "9822be111d2ccc29c7172c78b8af8ff5", "name": "Hành Động", "slug": "hanh-dong" }
+    ]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "status": "success",
+  "message": "",
+  "data": {
+    "APP_DOMAIN_CDN_IMAGE": "https://phimimg.com",
+    "item": {
+      "tmdb": {
+        "id": "271016",
+        "type": "tv",
+        "season": 1,
+        "vote_average": 0,
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": "tt37118307",
+        "vote_average": 0,
+        "vote_count": 0
+      },
+      "modified": { "time": "2026-08-10T20:58:07.000Z" },
+      "_id": "6a6c7a3443f4d7a8fe03c8d2",
+      "name": "Cửu Môn",
+      "slug": "cuu-mon-2026",
+      "origin_name": "Mystic Nine",
+      "type": "series",
+      "status": "ongoing",
+      "thumb_url": "https://phimimg.com/uploads/movies/20260731/cuu-mon-2026-thumb.webp",
+      "poster_url": "https://phimimg.com/uploads/movies/20260731/cuu-mon-2026-poster.webp",
+      "chieurap": false,
+      "episode_current": "Tập 22",
+      "episode_total": 30,
+      "year": 2026,
+      "episodes": [
+        {
+          "server_name": "Vietsub",
+          "is_ai": false,
+          "server_data": [
+            {
+              "name": "Tập 01",
+              "slug": "tap-01",
+              "filename": "Cửu Môn - Mystic Nine - 2026 - 1080p - Vietsub - Tập 01",
+              "link_embed": "https://player.phimapi.com/player/?url=https://v7.kkphimplayer7.com/20260731/qWJLS8Cx/index.m3u8",
+              "link_m3u8": "https://v7.kkphimplayer7.com/20260731/qWJLS8Cx/index.m3u8"
+            }
+          ]
+        },
+        {
+          "server_name": "Thuyết Minh",
+          "is_ai": false,
+          "server_data": [
+            {
+              "name": "Tập 01",
+              "slug": "tap-01",
+              "filename": "Cửu Môn - Mystic Nine - 2026 - 1080p - Thuyết Minh - Tập 01",
+              "link_embed": "https://player.phimapi.com/player/?url=https://v7.kkphimplayer7.com/20260731/4kLrTrhN/index.m3u8",
+              "link_m3u8": "https://v7.kkphimplayer7.com/20260731/4kLrTrhN/index.m3u8"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

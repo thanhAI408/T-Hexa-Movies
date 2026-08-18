@@ -1,0 +1,77 @@
+{
+  "status": true,
+  "msg": "done",
+  "data": {
+    "items": [
+      {
+        "tmdb": {
+          "id": "292365",
+          "type": "tv",
+          "season": 1,
+          "vote_average": 0,
+          "vote_count": 0
+        },
+        "imdb": {
+          "id": "",
+          "vote_average": 0,
+          "vote_count": 0
+        },
+        "modified": {
+          "time": "2026-07-26T15:17:16.000Z"
+        },
+        "_id": "6a59298412f0391f00e0d8af",
+        "name": "Bí Kíp Nghịch Tập Của Thiếu Hiệp",
+        "slug": "bi-kip-nghich-tap-cua-thieu-hiep",
+        "origin_name": "Young Swordsman",
+        "alternative_names": [],
+        "type": "series",
+        "thumb_url": "bi-kip-nghich-tap-cua-thieu-hiep-thumb.jpg",
+        "poster_url": "bi-kip-nghich-tap-cua-thieu-hiep-poster.jpg",
+        "sub_docquyen": false,
+        "chieurap": false,
+        "time": "15 phút/tập",
+        "episode_current": "Hoàn tất (26/26)",
+        "quality": "HD",
+        "lang": "Vietsub",
+        "lang_key": [],
+        "year": 2026,
+        "category": [
+          {
+            "name": "Chính kịch",
+            "slug": "chinh-kich"
+          },
+          {
+            "name": "Cổ Trang",
+            "slug": "co-trang"
+          }
+        ],
+        "country": [
+          {
+            "name": "Trung Quốc",
+            "slug": "trung-quoc"
+          }
+        ],
+        "last_episodes": [
+          {
+            "server_name": "Vietsub #1",
+            "is_ai": false,
+            "name": "26"
+          }
+        ]
+      }
+    ],
+    "params": {
+      "type_slug": "danh-sach",
+      "slug": "phim-bo",
+      "pagination": {
+        "totalItems": 12815,
+        "totalItemsPerPage": 1,
+        "currentPage": 1,
+        "totalPages": 12815
+      }
+    },
+    "type_list": "phim-bo",
+    "APP_DOMAIN_FRONTEND": "https://ophim17.cc",
+    "APP_DOMAIN_CDN_IMAGE": "https://img.ophimimg.com"
+  }
+}

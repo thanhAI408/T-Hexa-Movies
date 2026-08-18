@@ -1,0 +1,23 @@
+{
+  "status": "success",
+  "message": "",
+  "data": {
+    "items": [
+      {
+        "_id": "620a21b2e0fc277084dfd0c5",
+        "name": "Hành Động",
+        "slug": "hanh-dong"
+      },
+      {
+        "_id": "620a220de0fc277084dfd16d",
+        "name": "Tình Cảm",
+        "slug": "tinh-cam"
+      },
+      {
+        "_id": "620a221de0fc277084dfd1c1",
+        "name": "Hài Hước",
+        "slug": "hai-huoc"
+      }
+    ]
+  }
+}

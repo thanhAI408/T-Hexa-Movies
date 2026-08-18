@@ -1,0 +1,58 @@
+{
+  "name": "t-hexa-movies",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run tests/unit tests/providers",
+    "test:integration": "vitest run tests/integration",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "sync:all": "tsx scripts/sync.ts --mode full",
+    "sync:incremental": "tsx scripts/sync.ts --mode incremental",
+    "sync:sample": "tsx scripts/sync.ts --mode sample",
+    "providers:health": "tsx scripts/providers-health.ts",
+    "benchmark:search": "tsx scripts/benchmark-search.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.4",
+    "drizzle-orm": "^0.45.2",
+    "hls.js": "^1.6.17",
+    "lucide-react": "^1.31.0",
+    "next": "16.3.0",
+    "p-limit": "^7.3.1",
+    "postgres": "^3.4.9",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.10",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.11",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22.13.0 <25"
+  },
+  "packageManager": "pnpm@11.16.0"
+}

@@ -1,0 +1,36 @@
+{
+  "status": true,
+  "msg": "done",
+  "items": [
+    {
+      "tmdb": {
+        "id": "1307118",
+        "type": "movie",
+        "season": null,
+        "vote_average": 6.2,
+        "vote_count": 26
+      },
+      "imdb": {
+        "id": "tt32654916",
+        "vote_average": 0,
+        "vote_count": 0
+      },
+      "modified": {
+        "time": "2026-08-03T13:36:25.000Z"
+      },
+      "_id": "6a7035dee4d6b5786f007613",
+      "name": "Soulm8te",
+      "slug": "soulm8te",
+      "origin_name": "Soulm8te",
+      "poster_url": "soulm8te-poster.webp",
+      "thumb_url": "soulm8te-thumb.webp",
+      "year": 2026
+    }
+  ],
+  "pagination": {
+    "totalItems": 36033,
+    "totalItemsPerPage": 24,
+    "currentPage": 1,
+    "totalPages": 1502
+  }
+}

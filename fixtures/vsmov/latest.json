@@ -1,0 +1,540 @@
+{
+  "status": true,
+  "items": [
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "301412",
+        "season": 1,
+        "vote_average": "7.5",
+        "vote_count": 5
+      },
+      "imdb": {
+        "id": "tt39028251"
+      },
+      "modified": {
+        "time": "2026-08-10T21:40:13+07:00"
+      },
+      "_id": 50387,
+      "name": "Giấc mơ trao em",
+      "origin_name": "Dream to You",
+      "slug": "giac-mo-trao-em",
+      "poster_url": "https://vsmov.com/storage/images/5AhL7NKa8UC6QOyzKiDohUM9VYT.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/mvVvtRI5ELaevFnrlOW4nrmYgtF.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "32868",
+        "season": 1,
+        "vote_average": "8.1",
+        "vote_count": 544
+      },
+      "imdb": {
+        "id": "tt1592154"
+      },
+      "modified": {
+        "time": "2026-08-10T21:37:04+07:00"
+      },
+      "_id": 51332,
+      "name": "Sát Thủ Nikita - Phần 1",
+      "origin_name": "Nikita - Season 1",
+      "slug": "sat-thu-nikita-phan-1",
+      "poster_url": "https://vsmov.com/storage/images/v26LJqvONINHfmUVuIGZyllbCIO.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/y1MZx2xi9Dr3AqgPyaUjWqFUEIN.jpg",
+      "year": 2010
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "304210",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": null
+      },
+      "modified": {
+        "time": "2026-08-10T21:19:30+07:00"
+      },
+      "_id": 51186,
+      "name": "Luang Pho Trong Sạch",
+      "origin_name": "Man of Virtue",
+      "slug": "luang-pho-trong-sach",
+      "poster_url": "https://vsmov.com/storage/images/x6pl6jalk8BSkBAh0ulES87XyHT.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/t6XhTA4TnmweFotKmCKKZjwsnwD.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "325211",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": "tt43613798"
+      },
+      "modified": {
+        "time": "2026-08-10T21:03:17+07:00"
+      },
+      "_id": 50878,
+      "name": "San Hô Đen",
+      "origin_name": "Black Coral",
+      "slug": "san-ho-den",
+      "poster_url": "https://vsmov.com/storage/images/gVkbkMYg9PPXGvMh7kH1CE5oB72.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/qj3r7rKU9iucgAIo3r55szuh4La.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "276567",
+        "season": null,
+        "vote_average": "8.0",
+        "vote_count": 1
+      },
+      "imdb": {
+        "id": "tt37140455"
+      },
+      "modified": {
+        "time": "2026-08-10T20:59:32+07:00"
+      },
+      "_id": 51153,
+      "name": "Ván Cờ Hôn Nhân",
+      "origin_name": "Mrs. Revenge",
+      "slug": "van-co-hon-nhan",
+      "poster_url": "https://vsmov.com/storage/images/50dUu8oWbHScC2fSlM9z8eIX6n8.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/bwiGIDkZ6K8vbRcskAEcK1iWIC0.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "movie",
+        "id": "35019",
+        "season": null,
+        "vote_average": "6.3",
+        "vote_count": 1975
+      },
+      "imdb": {
+        "id": "tt1415283"
+      },
+      "modified": {
+        "time": "2026-08-10T20:48:17+07:00"
+      },
+      "_id": 4274,
+      "name": "Nanny McPhee và Vụ Nổ Big Bang",
+      "origin_name": "Nanny McPhee and the Big Bang",
+      "slug": "nanny-mcphee-va-vu-no-big-bang",
+      "poster_url": "https://vsmov.com/storage/images/cQW6UoDxwwfqIMTVfxdxHk4JLGP.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/6ShO1dgwjf8GTmG5hgAQrZ1Y1Cg.jpg",
+      "year": 2010
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "315326",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": "tt43738148"
+      },
+      "modified": {
+        "time": "2026-08-10T20:16:39+07:00"
+      },
+      "_id": 51198,
+      "name": "Lâu Đài Tham Vọng (Bản Thái)",
+      "origin_name": "Sky Castle Thailand",
+      "slug": "lau-dai-tham-vong-ban-thai",
+      "poster_url": {},
+      "thumb_url": "https://vsmov.com/storage/images/xJmXMBxh5RDA8q5JLqOvMFiixtt.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "18165",
+        "season": 8,
+        "vote_average": "7.3",
+        "vote_count": 9704
+      },
+      "imdb": {
+        "id": "tt1405406"
+      },
+      "modified": {
+        "time": "2026-08-10T20:13:21+07:00"
+      },
+      "_id": 51331,
+      "name": "Nhật Ký Ma Cà Rồng - Phần 8",
+      "origin_name": "The Vampire Diaries - Season 8",
+      "slug": "nhat-ky-ma-ca-rong-phan-8",
+      "poster_url": "https://vsmov.com/storage/images/cJYLon9ejKJV7ua03ab8Tj9u067.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/1IRuj3K0tppjPF1rypLp85DDoUl.jpg",
+      "year": 2016
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "276051",
+        "season": 1,
+        "vote_average": "9.8",
+        "vote_count": 23
+      },
+      "imdb": {
+        "id": "tt35681708"
+      },
+      "modified": {
+        "time": "2026-08-10T20:04:49+07:00"
+      },
+      "_id": 51330,
+      "name": "GELBOYS - Phần 1",
+      "origin_name": "GELBOYS - Season 1",
+      "slug": "gelboys-phan-1",
+      "poster_url": "https://vsmov.com/storage/images/7kFK3pRqAJ7NyjCjHEMxibUTEed.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/1t9Y5pM8XTNQRSRmhpGwDgyvZOs.jpg",
+      "year": 2025
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "5072",
+        "season": null,
+        "vote_average": "8.7",
+        "vote_count": 3
+      },
+      "imdb": {
+        "id": "tt0956052"
+      },
+      "modified": {
+        "time": "2026-08-10T19:59:07+07:00"
+      },
+      "_id": 51149,
+      "name": "Cạm Bẫy",
+      "origin_name": "Dicey Business",
+      "slug": "cam-bay-tvb",
+      "poster_url": "https://vsmov.com/storage/images/fwUhRvA9GigcGsuvn4xqHw0lbY3.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/fvrSMPDmD6tG9UPwJ1ZKySAaqqM.jpg",
+      "year": 2006
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "33925",
+        "season": null,
+        "vote_average": "7.7",
+        "vote_count": 6
+      },
+      "imdb": {
+        "id": "tt11953034"
+      },
+      "modified": {
+        "time": "2026-08-10T19:33:20+07:00"
+      },
+      "_id": 51329,
+      "name": "Độc Tâm Thần Thám",
+      "origin_name": "Every Move You Make",
+      "slug": "doc-tam-than-tham",
+      "poster_url": "https://vsmov.com/storage/images/5aXBR4nI5OwrzRbu1ZGrFEkrTFR.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/nrXrYK8bfGbjk6kXXuTTziafQFQ.jpg",
+      "year": 2010
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "276051",
+        "season": 2,
+        "vote_average": "0.0",
+        "vote_count": 23
+      },
+      "imdb": {
+        "id": "tt35681708"
+      },
+      "modified": {
+        "time": "2026-08-10T19:29:13+07:00"
+      },
+      "_id": 51328,
+      "name": "GELBOYS - Phần 2",
+      "origin_name": "GELBOYS - Season 2",
+      "slug": "gelboys-phan-2",
+      "poster_url": "https://vsmov.com/storage/images/7kFK3pRqAJ7NyjCjHEMxibUTEed.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/xhbMnIvnUhdnvk0pgsGrtYbZewO.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "75219",
+        "season": 8,
+        "vote_average": "8.0",
+        "vote_count": 2809
+      },
+      "imdb": {
+        "id": "tt7235466"
+      },
+      "modified": {
+        "time": "2026-08-10T19:28:41+07:00"
+      },
+      "_id": 50680,
+      "name": "Cuộc Gọi Khẩn Cấp 9-1-1 - Phần 8",
+      "origin_name": "9-1-1 - Season 8",
+      "slug": "cuoc-goi-khan-cap-9-1-1",
+      "poster_url": "https://vsmov.com/storage/images/h050XJoiIobaH6bhj3MAhgilkpJ.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/5DgXjJucHLWexDda0BjDnoqT2O7.jpg",
+      "year": 2024
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "291856",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": "tt36984839"
+      },
+      "modified": {
+        "time": "2026-08-10T19:27:18+07:00"
+      },
+      "_id": 51327,
+      "name": "Trọng Khí",
+      "origin_name": "Forging Justice",
+      "slug": "trong-khi",
+      "poster_url": "https://vsmov.com/storage/images/elfvJ7Quc5ffx1SK59UFEa5dRkQ.jpg",
+      "thumb_url": "https://vsmov.com/storage/files/Forging-Justice-2026-poster.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "18165",
+        "season": 7,
+        "vote_average": "6.7",
+        "vote_count": 9704
+      },
+      "imdb": {
+        "id": "tt1405406"
+      },
+      "modified": {
+        "time": "2026-08-10T17:44:35+07:00"
+      },
+      "_id": 51326,
+      "name": "Nhật Ký Ma Cà Rồng - Phần 7",
+      "origin_name": "The Vampire Diaries - Season 7",
+      "slug": "nhat-ky-ma-ca-rong-phan-7",
+      "poster_url": "https://vsmov.com/storage/images/cJYLon9ejKJV7ua03ab8Tj9u067.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/cgD01HWwBjGqQ3ehQnvNuPfufwx.jpg",
+      "year": 2015
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "289116",
+        "season": null,
+        "vote_average": "9.0",
+        "vote_count": 1
+      },
+      "imdb": {
+        "id": "tt37831535"
+      },
+      "modified": {
+        "time": "2026-08-10T17:15:37+07:00"
+      },
+      "_id": 51124,
+      "name": "Bạn Gái Thiên Tài",
+      "origin_name": "Genius Girlfriend",
+      "slug": "ban-gai-thien-tai",
+      "poster_url": "https://vsmov.com/storage/images/tWhf5jkrMr9fInmW3VG6ZHhRLOP.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/z1FtSOVSWow6n1Jj8jdtn8rfm4L.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "273119",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": null
+      },
+      "modified": {
+        "time": "2026-08-10T17:13:21+07:00"
+      },
+      "_id": 51176,
+      "name": "Nhân Ngư",
+      "origin_name": "Mermaid",
+      "slug": "nhan-ngu",
+      "poster_url": "https://vsmov.com/storage/images/i8EFtHNA1D59HyaiwUnXJJ4ByW3.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/cuKDM4sgWbbyJn6z35caK7t8Fz.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "movie",
+        "id": "1284041",
+        "season": null,
+        "vote_average": "6.7",
+        "vote_count": 311
+      },
+      "imdb": {
+        "id": "tt32268156"
+      },
+      "modified": {
+        "time": "2026-08-10T17:10:49+07:00"
+      },
+      "_id": 21643,
+      "name": "Ngôi Nhà Cuối Cùng",
+      "origin_name": "The Last House",
+      "slug": "ngoi-nha-cuoi-cung",
+      "poster_url": "https://vsmov.com/storage/images/2mPmccLg8QCD4ZF6v8kSsUijPPW.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/6JU7E8Vv2M11egkctWVOScxWR75.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "287496",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": "tt31886947"
+      },
+      "modified": {
+        "time": "2026-08-10T17:08:34+07:00"
+      },
+      "_id": 51292,
+      "name": "Hoa Khai Cẩm Tú",
+      "origin_name": "The Road to Splendor",
+      "slug": "hoa-khai-cam-tu",
+      "poster_url": "https://vsmov.com/storage/images/b40uVARQ5gxG529lGHsnc4t1rND.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/efZaIRcLSDMIxfVcgdkiQVSCbMs.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "94997",
+        "season": 3,
+        "vote_average": "6.2",
+        "vote_count": 6739
+      },
+      "imdb": {
+        "id": "tt11198330"
+      },
+      "modified": {
+        "time": "2026-08-10T16:50:40+07:00"
+      },
+      "_id": 50873,
+      "name": "Gia Tộc Rồng - Mùa 3",
+      "origin_name": "House of the Dragon - Season 3",
+      "slug": "gia-toc-rong-mua-3",
+      "poster_url": "https://vsmov.com/storage/images/577eXC8wFQT0eUrJcgznSiFPRmk.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/wSvDQN6tZR4VzDDZD3MUPIghVjC.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "63247",
+        "season": 1,
+        "vote_average": "8.4",
+        "vote_count": 6296
+      },
+      "imdb": {
+        "id": "tt0475784"
+      },
+      "modified": {
+        "time": "2026-08-10T16:23:31+07:00"
+      },
+      "_id": 51325,
+      "name": "Thế Giới Viễn Tây - Phần 1",
+      "origin_name": "Westworld - Season 1",
+      "slug": "the-gioi-vien-tay-phan-1",
+      "poster_url": "https://vsmov.com/storage/images/rX5hvSRB2k4YoIvRg6Zky52rWk0.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/iOtDxaKgrp8htbY4SoCZTfXa9lh.jpg",
+      "year": 2016
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "330364",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": null
+      },
+      "modified": {
+        "time": "2026-08-10T15:00:54+07:00"
+      },
+      "_id": 51324,
+      "name": "Mễ Lương Và Mạch Thanh",
+      "origin_name": "Home to Harvest",
+      "slug": "me-luong-va-mach-thanh",
+      "poster_url": "https://vsmov.com/storage/images/dULlXXgjiWczum9UqvJJsEFnPH9.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/jg4ggctGpf3O3xBrYaJwCwxt9ZR.jpg",
+      "year": 2026
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "18165",
+        "season": 6,
+        "vote_average": "7.9",
+        "vote_count": 9704
+      },
+      "imdb": {
+        "id": "tt1405406"
+      },
+      "modified": {
+        "time": "2026-08-10T14:42:25+07:00"
+      },
+      "_id": 51323,
+      "name": "Nhật Ký Ma Cà Rồng - Phần 6",
+      "origin_name": "The Vampire Diaries - Season 6",
+      "slug": "nhat-ky-ma-ca-rong-phan-6",
+      "poster_url": "https://vsmov.com/storage/images/cJYLon9ejKJV7ua03ab8Tj9u067.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/vRzCrlehp6IXZodNeqeORxcOsbM.jpg",
+      "year": 2014
+    },
+    {
+      "tmdb": {
+        "type": "tv",
+        "id": "330348",
+        "season": null,
+        "vote_average": "0.0",
+        "vote_count": 0
+      },
+      "imdb": {
+        "id": null
+      },
+      "modified": {
+        "time": "2026-08-10T14:09:30+07:00"
+      },
+      "_id": 51217,
+      "name": "Bí Ẩn Nhà Ma",
+      "origin_name": "The Mystery of the Haunted House",
+      "slug": "bi-an-nha-ma",
+      "poster_url": "https://vsmov.com/storage/images/6O5T8ll8waboaveXzZFE1DUk0Cv.jpg",
+      "thumb_url": "https://vsmov.com/storage/images/rgndlmdZ4L504sWvAJWCY095IFX.jpg",
+      "year": 2026
+    }
+  ],
+  "pathImage": "https://nguon.vsphim.com/storage/images/",
+  "pagination": {
+    "totalItems": 18253,
+    "totalItemsPerPage": 24,
+    "currentPage": 1,
+    "totalPages": 761
+  }
+}

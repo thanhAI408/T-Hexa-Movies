@@ -1,0 +1,23 @@
+{
+  "status": "success",
+  "message": "",
+  "data": {
+    "items": [
+      {
+        "_id": "932bbaca386ee0436ad0159117eabae4",
+        "name": "Anh",
+        "slug": "anh"
+      },
+      {
+        "_id": "05de95be5fc404da9680bbb3dd8262e6",
+        "name": "Hàn Quốc",
+        "slug": "han-quoc"
+      },
+      {
+        "_id": "74d9fa92f4dea9ecea8fc2233dc7921a",
+        "name": "Âu Mỹ",
+        "slug": "au-my"
+      }
+    ]
+  }
+}

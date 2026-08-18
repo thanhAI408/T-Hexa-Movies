@@ -1,0 +1,29 @@
+{
+  "status": "success",
+  "paginate": {
+    "current_page": 1,
+    "total_page": 3327,
+    "total_items": 33265,
+    "items_per_page": 10
+  },
+  "items": [
+    {
+      "name": "Hoa Khai Cẩm Tú",
+      "slug": "hoa-khai-cam-tu",
+      "original_name": "The Road to Splendor",
+      "thumb_url": "https://phim.nguonc.com/public/images/Post/1/hoa-khai-cam-tu.jpg",
+      "poster_url": "https://phim.nguonc.com/public/images/Post/1/hoa-khai-cam-tu-1.jpg",
+      "created": "2026-08-09T06:16:47.000000Z",
+      "modified": "2026-08-10T10:31:17.000000Z",
+      "description": "Triệu Lăng, một lái buôn muối lậu hào sảng, trọng tình trọng nghĩa, tuy xuất thân thấp kém nhưng luôn mang trong mình chí lớn. Định mệnh đưa chàng gặp Phó Đình Vân, tiểu thư xuất thân từ một thế gia danh giá, bị vu oan tư thông. Biến cố ập đến khiến cả hai buộc phải cùng nhau lưu vong. Trên hành trình chạy trốn, họ phải đối mặt với muôn vàn thử thách từ gia tộc, triều đình và cả số phận. Sau bao lần kề vai sát cánh vượt qua hiểm nguy, cùng chống lại nghịch cảnh, cuối cùng hai người đã nên duyên đôi lứa và viết nên một câu chuyện tình được mãi lưu danh.",
+      "total_episodes": 36,
+      "current_episode": "Tập 5",
+      "time": "45 Phút/Tập",
+      "quality": "HD",
+      "language": "Vietsub + Thuyết Minh",
+      "director": "Đặng Khoa",
+      "casts": "Đinh Vũ Hề, Đặng Ân Hi, Vưu Tĩnh Như, Bạch Chú, Lữ Hiểu Lâm",
+      "year": "2026"
+    }
+  ]
+}

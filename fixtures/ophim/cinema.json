@@ -1,0 +1,78 @@
+{
+  "status": true,
+  "msg": "done",
+  "data": {
+    "titlePage": "Phim Chiếu Rạp",
+    "items": [
+      {
+        "tmdb": {
+          "id": "1339713",
+          "type": "movie",
+          "season": null,
+          "vote_average": 8.002,
+          "vote_count": 1173
+        },
+        "imdb": {
+          "id": "tt37287335",
+          "vote_average": 8.2,
+          "vote_count": 50183
+        },
+        "modified": {
+          "time": "2026-07-01T22:21:51.000Z"
+        },
+        "_id": "6a44c4e62c0a4eaf265d6437",
+        "name": "Ám Ảnh",
+        "slug": "am-anh-2026",
+        "origin_name": "Obsession",
+        "alternative_names": [],
+        "type": "single",
+        "thumb_url": "am-anh-2026-thumb.jpg",
+        "poster_url": "am-anh-2026-poster.jpg",
+        "sub_docquyen": false,
+        "chieurap": true,
+        "time": "108 Phút",
+        "episode_current": "Full",
+        "quality": "HD",
+        "lang": "Vietsub",
+        "lang_key": [],
+        "year": 2026,
+        "category": [
+          {
+            "name": "Kinh Dị",
+            "slug": "kinh-di"
+          }
+        ],
+        "country": [
+          {
+            "name": "Âu Mỹ",
+            "slug": "au-my"
+          },
+          {
+            "name": "Anh",
+            "slug": "anh"
+          }
+        ],
+        "last_episodes": [
+          {
+            "server_name": "Vietsub #1",
+            "is_ai": false,
+            "name": "Full"
+          }
+        ]
+      }
+    ],
+    "params": {
+      "type_slug": "danh-sach",
+      "slug": "phim-chieu-rap",
+      "pagination": {
+        "totalItems": 505,
+        "totalItemsPerPage": 1,
+        "currentPage": 1,
+        "totalPages": 505
+      }
+    },
+    "type_list": "phim-chieu-rap",
+    "APP_DOMAIN_FRONTEND": "https://ophim17.cc",
+    "APP_DOMAIN_CDN_IMAGE": "https://img.ophimimg.com"
+  }
+}

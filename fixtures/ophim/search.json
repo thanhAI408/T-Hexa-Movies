@@ -1,0 +1,73 @@
+{
+  "status": "success",
+  "message": "",
+  "data": {
+    "items": [
+      {
+        "tmdb": {
+          "id": "718789",
+          "type": "movie",
+          "season": null,
+          "vote_average": 6.886,
+          "vote_count": 3708
+        },
+        "imdb": {
+          "id": "tt10298810",
+          "vote_average": 6.1,
+          "vote_count": 134235
+        },
+        "modified": {
+          "time": "2022-07-15T15:13:38.000Z"
+        },
+        "_id": "62b2ef3f3e39f9843ca7636a",
+        "name": "Lightyear: Cảnh sát vũ trụ",
+        "slug": "lightyear-canh-sat-vu-tru",
+        "origin_name": "Lightyear",
+        "alternative_names": [],
+        "type": "hoathinh",
+        "thumb_url": "lightyear-canh-sat-vu-tru-thumb.jpg",
+        "poster_url": "lightyear-canh-sat-vu-tru-poster.jpg",
+        "sub_docquyen": false,
+        "chieurap": true,
+        "time": "110 phút",
+        "episode_current": "Full",
+        "quality": "HD",
+        "lang": "Vietsub",
+        "lang_key": [],
+        "year": 2022,
+        "category": [
+          {
+            "name": "Phiêu Lưu",
+            "slug": "phieu-luu"
+          }
+        ],
+        "country": [
+          {
+            "name": "Âu Mỹ",
+            "slug": "au-my"
+          }
+        ],
+        "last_episodes": [
+          {
+            "server_name": "Vietsub #1",
+            "is_ai": false,
+            "name": "Full"
+          }
+        ]
+      }
+    ],
+    "params": {
+      "type_slug": "tim-kiem",
+      "keyword": "lightyear",
+      "pagination": {
+        "totalItems": 3,
+        "totalItemsPerPage": 1,
+        "currentPage": 1,
+        "totalPages": 3
+      }
+    },
+    "type_list": "",
+    "APP_DOMAIN_FRONTEND": "https://ophim17.cc",
+    "APP_DOMAIN_CDN_IMAGE": "https://img.ophimimg.com"
+  }
+}

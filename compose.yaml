@@ -1,0 +1,22 @@
+name: t-hexa-movies
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: thexa_movies
+      POSTGRES_USER: thexa
+      POSTGRES_PASSWORD: thexa_local
+    ports:
+      - "5432:5432"
+    volumes:
+      - thexa_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U thexa -d thexa_movies"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  thexa_postgres_data:

@@ -1,0 +1,69 @@
+{
+  "status": "success",
+  "movie": {
+    "id": "9313492d85a66aa6cfec9656fbb95629",
+    "name": "Hoa Khai Cẩm Tú",
+    "slug": "hoa-khai-cam-tu",
+    "original_name": "The Road to Splendor",
+    "thumb_url": "https://phim.nguonc.com/public/images/Post/1/hoa-khai-cam-tu.jpg",
+    "poster_url": "https://phim.nguonc.com/public/images/Post/1/hoa-khai-cam-tu-1.jpg",
+    "created": "2026-08-09T06:16:47.000000Z",
+    "modified": "2026-08-10T10:31:17.000000Z",
+    "description": "Triệu Lăng, một lái buôn muối lậu hào sảng, trọng tình trọng nghĩa, tuy xuất thân thấp kém nhưng luôn mang trong mình chí lớn. Định mệnh đưa chàng gặp Phó Đình Vân, tiểu thư xuất thân từ một thế gia danh giá, bị vu oan tư thông. Biến cố ập đến khiến cả hai buộc phải cùng nhau lưu vong. Trên hành trình chạy trốn, họ phải đối mặt với muôn vàn thử thách từ gia tộc, triều đình và cả số phận. Sau bao lần kề vai sát cánh vượt qua hiểm nguy, cùng chống lại nghịch cảnh, cuối cùng hai người đã nên duyên đôi lứa và viết nên một câu chuyện tình được mãi lưu danh.",
+    "total_episodes": 36,
+    "current_episode": "Tập 5",
+    "time": "45 Phút/Tập",
+    "quality": "HD",
+    "language": "Vietsub + Thuyết Minh",
+    "director": "Đặng Khoa",
+    "casts": "Đinh Vũ Hề, Đặng Ân Hi, Vưu Tĩnh Như, Bạch Chú, Lữ Hiểu Lâm",
+    "year": "2026",
+    "category": {
+      "1": {
+        "group": { "id": "c4ca4238a0b923820dcc509a6f75849b", "name": "Định dạng" },
+        "list": [
+          { "id": "eccbc87e4b5ce2fe28308fd9f2a7baf3", "name": "Phim bộ" },
+          { "id": "0777d5c17d4066b82ab86dff8a46af6f", "name": "Đang chiếu" }
+        ]
+      },
+      "2": {
+        "group": { "id": "1679091c5a880faf6fb5e6087eb1b2dc", "name": "Thể loại" },
+        "list": [
+          { "id": "c51ce410c124a10e0db5e4b97fc2af39", "name": "Chính Kịch" },
+          { "id": "a8baa56554f96369ab93e4f3bb068c22", "name": "Cổ Trang" },
+          { "id": "2a79ea27c279e471f4d180b08d62b00a", "name": "Tình Cảm" }
+        ]
+      },
+      "3": {
+        "group": { "id": "8e296a067a37563370ded05f5a3bf3ec", "name": "Năm" },
+        "list": [{ "id": "7e7757b1e12abcb736ab9a754ffb617a", "name": "2026" }]
+      },
+      "4": {
+        "group": { "id": "67c6a1e7ce56d3d6fa748ab6d9af3fd7", "name": "Quốc gia" },
+        "list": [{ "id": "c0c7c76d30bd3dcaefc96f40275bdc0a", "name": "Trung Quốc" }]
+      }
+    },
+    "episodes": [
+      {
+        "server_name": "Vietsub #1",
+        "items": [
+          {
+            "name": "1",
+            "slug": "tap-1",
+            "embed": "https://embed15.streamc.xyz/embed.php?hash=2e11c60a414090a99d077721521f6414"
+          }
+        ]
+      },
+      {
+        "server_name": "Thuyết minh #1",
+        "items": [
+          {
+            "name": "1",
+            "slug": "tap-1",
+            "embed": "https://embed14.streamc.xyz/embed.php?hash=c1b3ad4997d59535e034d72a8c3dde76"
+          }
+        ]
+      }
+    ]
+  }
+}
