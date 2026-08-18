@@ -206,8 +206,9 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
             const isActive = kind === cat.id;
             return (
               <button
+                type="button"
                 key={cat.id}
-                onClick={() => updateFilter("kind", cat.id)}
+                onClick={(e) => { e.preventDefault(); updateFilter("kind", cat.id); }}
                 className="group shrink-0 rounded-full px-5 py-2.5 text-sm font-medium whitespace-nowrap transition-all duration-300 hover:scale-105"
                 style={{
                   background: isActive ? store.theme.gradientAccent : "transparent",
@@ -236,8 +237,9 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               const isActive = genre === g.slug;
               return (
                 <button
+                  type="button"
                   key={g.slug}
-                  onClick={() => updateFilter("genre", isActive ? "" : g.slug)}
+                  onClick={(e) => { e.preventDefault(); updateFilter("genre", isActive ? "" : g.slug); }}
                   className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
                   style={{
                     background: isActive ? store.theme.primary : `${store.theme.primaryMuted}`,
@@ -250,7 +252,8 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
             })}
             {exploreData.genres.length > 8 && (
               <button
-                onClick={() => setShowFilters(!showFilters)}
+                type="button"
+                onClick={(e) => { e.preventDefault(); setShowFilters(!showFilters); }}
                 className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
                 style={{
                   background: "transparent",
@@ -297,7 +300,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-3">
         <button
-          onClick={() => setShowFilters(!showFilters)}
+          onClick={(e) => { e.preventDefault(); setShowFilters(!showFilters); }}
           className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all hover:scale-105"
           style={{
             background: showFilters ? store.theme.primaryMuted : store.theme.surface,
@@ -321,7 +324,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         {/* Sort */}
         <div className="relative">
           <button
-            onClick={() => setShowSortDropdown(!showSortDropdown)}
+            onClick={(e) => { e.preventDefault(); setShowSortDropdown(!showSortDropdown); }}
             className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all hover:scale-105"
             style={{
               background: store.theme.surface,
@@ -342,7 +345,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               {SORT_OPTIONS.map((option) => (
                 <button
                   key={option.value}
-                  onClick={() => { updateFilter("sort", option.value); setShowSortDropdown(false); }}
+                  onClick={(e) => { e.preventDefault(); updateFilter("sort", option.value); setShowSortDropdown(false); }}
                   className="flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-white/5"
                   style={{
                     background: sort === option.value ? store.theme.primaryMuted : "transparent",
@@ -360,7 +363,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         {/* Active Filter Pills */}
         {genre && exploreData?.genres.find(g => g.slug === genre) && (
           <button
-            onClick={() => updateFilter("genre", "")}
+            onClick={(e) => { e.preventDefault(); updateFilter("genre", ""); }}
             className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all hover:scale-105"
             style={{ background: `${store.theme.primaryMuted}`, color: store.theme.primary }}
           >
@@ -372,7 +375,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
 
         {country && exploreData?.countries.find(c => c.slug === country) && (
           <button
-            onClick={() => updateFilter("country", "")}
+            onClick={(e) => { e.preventDefault(); updateFilter("country", ""); }}
             className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all hover:scale-105"
             style={{ background: `${store.theme.secondary}30`, color: store.theme.secondary }}
           >
@@ -384,7 +387,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
 
         {year && (
           <button
-            onClick={() => updateFilter("year", "")}
+            onClick={(e) => { e.preventDefault(); updateFilter("year", ""); }}
             className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-all hover:scale-105"
             style={{ background: `${store.theme.accent}30`, color: store.theme.accent }}
           >
@@ -458,8 +461,9 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                     const isActive = country === c.slug;
                     return (
                       <button
+                        type="button"
                         key={c.slug}
-                        onClick={() => updateFilter("country", isActive ? "" : c.slug)}
+                        onClick={(e) => { e.preventDefault(); updateFilter("country", isActive ? "" : c.slug); }}
                         className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
                         style={{
                           background: isActive ? store.theme.secondary : `${store.theme.secondary}15`,
@@ -486,8 +490,9 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                     const isActive = year === String(y);
                     return (
                       <button
+                        type="button"
                         key={y}
-                        onClick={() => updateFilter("year", isActive ? "" : String(y))}
+                        onClick={(e) => { e.preventDefault(); updateFilter("year", isActive ? "" : String(y)); }}
                         className="rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
                         style={{
                           background: isActive ? store.theme.accent : `${store.theme.accent}15`,
@@ -617,7 +622,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
           {pagination.totalPages > 1 && (
             <div className="mt-8 flex items-center justify-center gap-2">
               <button
-                onClick={() => updateFilter("page", String(page - 1))}
+                onClick={(e) => { e.preventDefault(); updateFilter("page", String(page - 1)); }}
                 disabled={page <= 1}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border transition-all disabled:opacity-50 hover:scale-105"
                 style={{ borderColor: store.theme.border, color: store.theme.text, background: store.theme.surface }}
@@ -636,7 +641,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                 return (
                   <button
                     key={pageNum}
-                    onClick={() => updateFilter("page", String(pageNum))}
+                    onClick={(e) => { e.preventDefault(); updateFilter("page", String(pageNum)); }}
                     className="flex h-10 min-w-[40px] items-center justify-center rounded-xl border px-3 text-sm font-medium transition-all hover:scale-105"
                     style={{
                       background: isActive ? store.theme.gradientAccent : store.theme.surface,
@@ -651,7 +656,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               })}
 
               <button
-                onClick={() => updateFilter("page", String(page + 1))}
+                onClick={(e) => { e.preventDefault(); updateFilter("page", String(page + 1)); }}
                 disabled={page >= pagination.totalPages}
                 className="flex h-10 w-10 items-center justify-center rounded-xl border transition-all disabled:opacity-50 hover:scale-105"
                 style={{ borderColor: store.theme.border, color: store.theme.text, background: store.theme.surface }}

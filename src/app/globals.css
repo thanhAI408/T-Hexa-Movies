@@ -36,7 +36,7 @@ html {
   min-width: 320px;
   background: var(--background);
   color-scheme: dark;
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 body {
