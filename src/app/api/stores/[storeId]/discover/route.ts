@@ -7,10 +7,11 @@ const VALID_STORES = [
   "vsmov", "ophim", "nguonc", "kkphim"
 ];
 
-// Normalize movie fields from different providers
+// ============================================
+// NORMALIZATION
+// ============================================
 function normalizeMovie(movie: any, provider: string) {
   if (provider === "vsmov") {
-    // VSMOV uses: name, origin_name, slug, poster_url, thumb_url, year, quality
     return {
       providerSlug: movie.slug,
       providerMovieId: movie._id,
@@ -26,7 +27,6 @@ function normalizeMovie(movie: any, provider: string) {
   }
 
   if (provider === "ophim") {
-    // OPhim uses: slug, name, origin_name, poster_url, thumb_url, year, quality
     return {
       providerSlug: movie.slug,
       providerMovieId: movie._id,
@@ -73,132 +73,240 @@ function normalizeMovie(movie: any, provider: string) {
   return movie;
 }
 
-// VSMOV rich discover
-async function discoverVsmov(baseUrl: string, params: Record<string, string>) {
+// ============================================
+// FETCH WITH TIMEOUT
+// ============================================
+async function fetchJson(url: string, timeout = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
   try {
-    let path = params.path || "danh-sach/phim-moi-cap-nhat";
-    const url = new URL(`${baseUrl}/api/${path}`);
-    Object.entries(params).forEach(([k, v]) => {
-      if (k !== "path") url.searchParams.set(k, v);
-    });
-
-    const response = await fetch(url.toString());
-    const data = await response.json();
-
-    const items = data.items || [];
-    return {
-      items: items.map((m: any) => normalizeMovie(m, "vsmov")),
-      pagination: {
-        currentPage: parseInt(params.page || "1"),
-        totalPages: data.pagination?.totalPages || Math.ceil(items.length / parseInt(params.limit || "24")) || 1,
-        totalItems: data.pagination?.totalItems || items.length || 0,
-        itemsPerPage: parseInt(params.limit || "24"),
-      }
-    };
-  } catch (error) {
-    return { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } };
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
-// OPhim has rich filtering by slug
-async function discoverOphim(baseUrl: string, kind: string, params: Record<string, string>) {
-  try {
-    let path = "/v1/api/danh-sach";
-    if (kind === "genre") path = `/v1/api/the-loai/${params.slug}`;
-    else if (kind === "country") path = `/v1/api/quoc-gia/${params.slug}`;
-    else if (kind === "year") path = `/v1/api/nam/${params.year}`;
-    else if (kind === "latest") path = "/v1/api/danh-sach";
-    else if (kind === "single") path = "/v1/api/danh-sach/phim-le";
-    else if (kind === "series") path = "/v1/api/danh-sach/phim-bo";
-    else if (kind === "animation") path = "/v1/api/danh-sach/hoat-hinh";
-    else if (kind === "tvshow") path = "/v1/api/danh-sach/tv-shows";
-    else if (kind === "cinema") path = "/v1/api/danh-sach/phim-chieu-rap";
+// ============================================
+// VSMOV - Uses path-based API
+// ============================================
+async function discoverVsmov(params: {
+  path?: string;
+  keyword?: string;
+  country?: string;
+  genre?: string;
+  year?: string;
+  page: number;
+  limit: number;
+}) {
+  const url = new URL("https://vsmov.com/api");
 
-    const url = new URL(`${baseUrl}${path}`);
-    url.searchParams.set("page", params.page || "1");
-    url.searchParams.set("limit", params.limit || "24");
-
-    const response = await fetch(url.toString());
-    const data = await response.json();
-
-    const items = data.data?.items || [];
-    return {
-      items: items.map((m: any) => normalizeMovie(m, "ophim")),
-      pagination: {
-        currentPage: parseInt(params.page || "1"),
-        totalPages: data.data?.pagination?.totalPages || Math.ceil(items.length / parseInt(params.limit || "24")) || 1,
-        totalItems: data.data?.pagination?.totalItems || items.length || 0,
-        itemsPerPage: parseInt(params.limit || "24"),
-      }
-    };
-  } catch (error) {
-    return { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } };
+  // Build path
+  if (params.keyword) {
+    url.pathname = url.pathname + "/tim-kiem";
+    url.searchParams.set("keyword", params.keyword);
+  } else if (params.country) {
+    url.pathname = url.pathname + "/quoc-gia/" + params.country;
+  } else if (params.genre) {
+    url.pathname = url.pathname + "/the-loai/" + params.genre;
+  } else if (params.year) {
+    url.pathname = url.pathname + "/nam/" + params.year;
+  } else if (params.path) {
+    url.pathname = url.pathname + "/" + params.path;
+  } else {
+    url.pathname = url.pathname + "/danh-sach/phim-moi-cap-nhat";
   }
+
+  url.searchParams.set("page", String(params.page));
+
+  const data = await fetchJson(url.toString());
+  if (!data) return { items: [], pagination: emptyPagination(params.page, params.limit) };
+
+  const items = (data.items || []).map((m: any) => normalizeMovie(m, "vsmov"));
+  const pagination = data.pagination || {};
+
+  return {
+    items,
+    pagination: {
+      currentPage: parseInt(pagination.currentPage || String(params.page)),
+      totalPages: pagination.totalPages || Math.ceil(items.length / params.limit) || 1,
+      totalItems: pagination.totalItems || items.length,
+      itemsPerPage: params.limit,
+    },
+  };
 }
 
-// NguonC simple
-async function discoverNguonc(baseUrl: string, params: Record<string, string>) {
-  try {
-    const path = params.path || "/api/films/phim-moi-cap-nhat";
-    const url = new URL(`${baseUrl}${path}`);
-    url.searchParams.set("page", params.page || "1");
+// ============================================
+// OPhim - Uses path-based API
+// ============================================
+async function discoverOphim(params: {
+  kind?: string;
+  slug?: string;
+  year?: string;
+  q?: string;
+  page: number;
+  limit: number;
+}) {
+  const baseUrl = "https://ophim1.com";
+  let path = "/v1/api/danh-sach";
+  const searchParams = new URLSearchParams();
 
-    const response = await fetch(url.toString());
-    const data = await response.json();
-
-    const items = data.items || [];
-    return {
-      items: items.map((m: any) => normalizeMovie(m, "nguonc")),
-      pagination: {
-        currentPage: parseInt(params.page || "1"),
-        totalPages: data.pagination?.totalPages || Math.ceil(items.length / 10) || 1,
-        totalItems: data.pagination?.totalItems || items.length || 0,
-        itemsPerPage: 10,
-      }
-    };
-  } catch (error) {
-    return { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 10 } };
+  if (params.q) {
+    path = "/v1/api/tim-kiem";
+    searchParams.set("keyword", params.q);
+  } else if (params.kind === "genre") {
+    path = `/v1/api/the-loai/${params.slug}`;
+  } else if (params.kind === "country") {
+    path = `/v1/api/quoc-gia/${params.slug}`;
+  } else if (params.kind === "year") {
+    path = `/v1/api/nam/${params.year}`;
+  } else if (params.kind === "single") {
+    path = "/v1/api/danh-sach/phim-le";
+  } else if (params.kind === "series") {
+    path = "/v1/api/danh-sach/phim-bo";
+  } else if (params.kind === "animation") {
+    path = "/v1/api/danh-sach/hoat-hinh";
+  } else if (params.kind === "tvshow") {
+    path = "/v1/api/danh-sach/tv-shows";
+  } else if (params.kind === "cinema") {
+    path = "/v1/api/danh-sach/phim-chieu-rap";
   }
+
+  searchParams.set("page", String(params.page));
+  searchParams.set("limit", String(params.limit));
+
+  const data = await fetchJson(`${baseUrl}${path}?${searchParams.toString()}`);
+  if (!data) return { items: [], pagination: emptyPagination(params.page, params.limit) };
+
+  const items = (data.data?.items || []).map((m: any) => normalizeMovie(m, "ophim"));
+  const pagination = data.data?.pagination || {};
+
+  return {
+    items,
+    pagination: {
+      currentPage: parseInt(pagination.currentPage || String(params.page)),
+      totalPages: pagination.totalPages || Math.ceil(items.length / params.limit) || 1,
+      totalItems: pagination.totalItems || items.length,
+      itemsPerPage: params.limit,
+    },
+  };
 }
 
-// KKPhim rich
-async function discoverKkphim(baseUrl: string, params: Record<string, string>) {
-  try {
-    let path = "/v1/api/danh-sach";
-    if (params.kind && params.kind !== "latest") {
-      const kindMap: Record<string, string> = {
-        single: "/v1/api/danh-sach/phim-le",
-        series: "/v1/api/danh-sach/phim-bo",
-        animation: "/v1/api/danh-sach/hoat-hinh",
-        tvshow: "/v1/api/danh-sach/tv-shows",
-        cinema: "/v1/api/danh-sach/phim-chieu-rap",
-      };
-      path = kindMap[params.kind] || path;
-    }
+// ============================================
+// NguonC - Simple API
+// ============================================
+async function discoverNguonc(params: {
+  kind?: string;
+  q?: string;
+  page: number;
+}) {
+  const baseUrl = "https://phim.nguonc.com";
+  let path = "/api/films/phim-moi-cap-nhat";
 
-    const url = new URL(`${baseUrl}${path}`);
-    Object.entries(params).forEach(([k, v]) => {
-      if (k !== "kind" && k !== "path") url.searchParams.set(k, String(v));
-    });
-
-    const response = await fetch(url.toString());
-    const data = await response.json();
-
-    const items = data.data?.items || [];
-    return {
-      items: items.map((m: any) => normalizeMovie(m, "kkphim")),
-      pagination: {
-        currentPage: parseInt(params.page || "1"),
-        totalPages: data.data?.pagination?.totalPages || Math.ceil(items.length / parseInt(params.limit || "24")) || 1,
-        totalItems: data.data?.pagination?.totalItems || items.length || 0,
-        itemsPerPage: parseInt(params.limit || "24"),
-      }
-    };
-  } catch (error) {
-    return { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } };
+  if (params.q) {
+    path = "/api/films/search";
+  } else if (params.kind === "single") {
+    path = "/api/films/danh-sach/phim-le";
+  } else if (params.kind === "series") {
+    path = "/api/films/danh-sach/phim-bo";
+  } else if (params.kind === "animation") {
+    path = "/api/films/danh-sach/hoat-hinh";
+  } else if (params.kind === "tvshow") {
+    path = "/api/films/danh-sach/tv-shows";
   }
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("page", String(params.page));
+  if (params.q) searchParams.set("keyword", params.q);
+
+  const data = await fetchJson(`${baseUrl}${path}?${searchParams.toString()}`);
+  if (!data) return { items: [], pagination: emptyPagination(params.page, 10) };
+
+  const items = (data.items || []).map((m: any) => normalizeMovie(m, "nguonc"));
+  const pagination = data.pagination || {};
+
+  return {
+    items,
+    pagination: {
+      currentPage: parseInt(pagination.currentPage || String(params.page)),
+      totalPages: pagination.totalPages || 1,
+      totalItems: pagination.totalItems || items.length,
+      itemsPerPage: 10,
+    },
+  };
 }
 
+// ============================================
+// KKPhim - Uses query params
+// ============================================
+async function discoverKkphim(params: {
+  kind?: string;
+  genre?: string;
+  country?: string;
+  year?: string;
+  q?: string;
+  sort?: string;
+  page: number;
+  limit: number;
+}) {
+  const baseUrl = "https://phimapi.com";
+  let path = "/v1/api/danh-sach";
+
+  if (params.q) {
+    path = "/v1/api/tim-kiem";
+  } else if (params.kind === "single") {
+    path = "/v1/api/danh-sach/phim-le";
+  } else if (params.kind === "series") {
+    path = "/v1/api/danh-sach/phim-bo";
+  } else if (params.kind === "animation") {
+    path = "/v1/api/danh-sach/hoat-hinh";
+  } else if (params.kind === "tvshow") {
+    path = "/v1/api/danh-sach/tv-shows";
+  } else if (params.kind === "cinema") {
+    path = "/v1/api/danh-sach/phim-chieu-rap";
+  }
+
+  const searchParams = new URLSearchParams();
+  searchParams.set("page", String(params.page));
+  searchParams.set("limit", String(params.limit));
+  if (params.q) searchParams.set("keyword", params.q);
+  if (params.genre) searchParams.set("genre", params.genre);
+  if (params.country) searchParams.set("country", params.country);
+  if (params.year) searchParams.set("year", params.year);
+  if (params.sort) searchParams.set("sort_field", params.sort);
+
+  const data = await fetchJson(`${baseUrl}${path}?${searchParams.toString()}`);
+  if (!data) return { items: [], pagination: emptyPagination(params.page, params.limit) };
+
+  const items = (data.data?.items || []).map((m: any) => normalizeMovie(m, "kkphim"));
+  const pagination = data.data?.pagination || {};
+
+  return {
+    items,
+    pagination: {
+      currentPage: parseInt(pagination.currentPage || String(params.page)),
+      totalPages: pagination.totalPages || Math.ceil(items.length / params.limit) || 1,
+      totalItems: pagination.totalItems || items.length,
+      itemsPerPage: params.limit,
+    },
+  };
+}
+
+function emptyPagination(page: number, limit: number) {
+  return {
+    currentPage: page,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: limit,
+  };
+}
+
+// ============================================
+// MAIN HANDLER
+// ============================================
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ storeId: string }> }
@@ -217,139 +325,74 @@ export async function GET(
   const country = searchParams.get("country") || "";
   const year = searchParams.get("year") || "";
   const sort = searchParams.get("sort") || "modified";
-  const page = searchParams.get("page") || "1";
-  const limit = searchParams.get("limit") || "24";
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "24");
   const q = searchParams.get("q") || "";
-
-  const baseUrls: Record<string, string> = {
-    vsmov: "https://vsmov.com",
-    ophim: "https://ophim1.com",
-    nguonc: "https://phim.nguonc.com",
-    kkphim: "https://phimapi.com",
-  };
-
-  const baseUrl = baseUrls[apiId];
 
   try {
     let result;
 
-    // Search query
-    if (q) {
-      switch (apiId) {
-        case "vsmov":
-          result = await discoverVsmov(baseUrl, { path: "tim-kiem", keyword: q, page, limit });
-          break;
-        case "ophim":
-          const ophimSearchUrl = new URL(`${baseUrl}/v1/api/tim-kiem`);
-          ophimSearchUrl.searchParams.set("keyword", q);
-          ophimSearchUrl.searchParams.set("page", page);
-          ophimSearchUrl.searchParams.set("limit", limit);
-          const ophimSearch = await fetch(ophimSearchUrl.toString()).then(r => r.json());
-          result = {
-            items: (ophimSearch.data?.items || []).map((m: any) => normalizeMovie(m, "ophim")),
-            pagination: ophimSearch.data?.pagination || { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 }
-          };
-          break;
-        case "nguonc":
-          const nguoncSearchUrl = new URL(`${baseUrl}/api/films/search`);
-          nguoncSearchUrl.searchParams.set("keyword", q);
-          nguoncSearchUrl.searchParams.set("page", page);
-          const nguoncSearch = await fetch(nguoncSearchUrl.toString()).then(r => r.json());
-          result = {
-            items: (nguoncSearch.items || []).map((m: any) => normalizeMovie(m, "nguonc")),
-            pagination: nguoncSearch.pagination || { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 10 }
-          };
-          break;
-        case "kkphim":
-          const kkphimSearchUrl = new URL(`${baseUrl}/v1/api/tim-kiem`);
-          kkphimSearchUrl.searchParams.set("keyword", q);
-          kkphimSearchUrl.searchParams.set("page", page);
-          kkphimSearchUrl.searchParams.set("limit", limit);
-          const kkphimSearch = await fetch(kkphimSearchUrl.toString()).then(r => r.json());
-          result = {
-            items: (kkphimSearch.data?.items || []).map((m: any) => normalizeMovie(m, "kkphim")),
-            pagination: kkphimSearch.data?.pagination || { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 }
-          };
-          break;
-      }
-    }
-    // Filter by genre
-    else if (genre) {
-      switch (apiId) {
-        case "vsmov":
-          result = await discoverVsmov(baseUrl, { path: "tim-kiem", keyword: genre, page, limit });
-          break;
-        case "ophim":
-          result = await discoverOphim(baseUrl, "genre", { slug: genre, page, limit });
-          break;
-        case "kkphim":
-          result = await discoverKkphim(baseUrl, { genre, sort_field: sort, page, limit });
-          break;
-        default:
-          result = { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } };
-      }
-    }
-    // Filter by country
-    else if (country) {
-      switch (apiId) {
-        case "vsmov":
-          result = await discoverVsmov(baseUrl, { path: "tim-kiem", keyword: country, page, limit });
-          break;
-        case "ophim":
-          result = await discoverOphim(baseUrl, "country", { slug: country, page, limit });
-          break;
-        case "kkphim":
-          result = await discoverKkphim(baseUrl, { country, sort_field: sort, page, limit });
-          break;
-        default:
-          result = { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } };
-      }
-    }
-    // Filter by year
-    else if (year) {
-      switch (apiId) {
-        case "vsmov":
-          result = await discoverVsmov(baseUrl, { path: "tim-kiem", keyword: year, page, limit });
-          break;
-        case "ophim":
-          result = await discoverOphim(baseUrl, "year", { year, page, limit });
-          break;
-        case "kkphim":
-          result = await discoverKkphim(baseUrl, { year, sort_field: sort, page, limit });
-          break;
-        default:
-          result = { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } };
-      }
-    }
-    // Default list by kind
-    else {
-      switch (apiId) {
-        case "vsmov":
-          const vsmovPath = kind === "latest" ? "danh-sach/phim-moi-cap-nhat"
-            : kind === "single" ? "danh-sach/phim-le"
+    switch (apiId) {
+      case "vsmov":
+        if (q) {
+          result = await discoverVsmov({ keyword: q, page, limit });
+        } else if (country) {
+          result = await discoverVsmov({ country, page, limit });
+        } else if (genre) {
+          result = await discoverVsmov({ genre, page, limit });
+        } else if (year) {
+          result = await discoverVsmov({ year, page, limit });
+        } else {
+          const path = kind === "single" ? "danh-sach/phim-le"
             : kind === "series" ? "danh-sach/phim-bo"
             : kind === "animation" ? "the-loai/hoat-hinh"
-            : "danh-sach/phim-moi";
-          result = await discoverVsmov(baseUrl, { path: vsmovPath, page, limit });
-          break;
-        case "ophim":
-          result = await discoverOphim(baseUrl, kind, { page, limit });
-          break;
-        case "nguonc":
-          const nguoncPath = kind === "single" ? "/api/films/danh-sach/phim-le"
-            : kind === "series" ? "/api/films/danh-sach/phim-bo"
-            : kind === "animation" ? "/api/films/danh-sach/hoat-hinh"
-            : kind === "tvshow" ? "/api/films/danh-sach/tv-shows"
-            : "/api/films/phim-moi-cap-nhat";
-          result = await discoverNguonc(baseUrl, { path: nguoncPath, page });
-          break;
-        case "kkphim":
-          result = await discoverKkphim(baseUrl, { kind, sort_field: sort, page, limit });
-          break;
-      }
+            : kind === "tvshow" ? "danh-sach/phim-bo"
+            : "danh-sach/phim-moi-cap-nhat";
+          result = await discoverVsmov({ path, page, limit });
+        }
+        break;
+
+      case "ophim":
+        if (q) {
+          result = await discoverOphim({ q, page, limit });
+        } else if (genre) {
+          result = await discoverOphim({ kind: "genre", slug: genre, page, limit });
+        } else if (country) {
+          result = await discoverOphim({ kind: "country", slug: country, page, limit });
+        } else if (year) {
+          result = await discoverOphim({ kind: "year", year, page, limit });
+        } else {
+          result = await discoverOphim({ kind, page, limit });
+        }
+        break;
+
+      case "nguonc":
+        if (q) {
+          result = await discoverNguonc({ q, page });
+        } else {
+          result = await discoverNguonc({ kind, page });
+        }
+        break;
+
+      case "kkphim":
+        if (q) {
+          result = await discoverKkphim({ q, page, limit });
+        } else if (genre) {
+          result = await discoverKkphim({ genre, page, limit });
+        } else if (country) {
+          result = await discoverKkphim({ country, page, limit });
+        } else if (year) {
+          result = await discoverKkphim({ year, page, limit });
+        } else {
+          result = await discoverKkphim({ kind, sort, page, limit });
+        }
+        break;
+
+      default:
+        return NextResponse.json({ error: "Unknown provider" }, { status: 404 });
     }
 
-    return NextResponse.json(result || { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 } });
+    return NextResponse.json(result);
   } catch (error) {
     console.error(`[API] Discover ${storeId} error:`, error);
     return NextResponse.json({ error: "Failed to fetch movies" }, { status: 500 });
