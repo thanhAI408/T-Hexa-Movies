@@ -20,8 +20,11 @@ interface ExploreData {
   store: string;
   categories: { id: string; name: string; slug: string; emoji: string }[];
   genres: TaxonomyItem[];
+  genresCount: number;
   countries: TaxonomyItem[];
+  countriesCount: number;
   years: number[];
+  yearsCount: number;
   regions?: { slug: string; name: string; emoji: string }[];
   filters: {
     hasGenres: boolean;
@@ -231,9 +234,10 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
           <div className="mb-2 flex items-center gap-2 text-xs font-medium" style={{ color: store.theme.textMuted }}>
             <Sparkles size={14} />
             <span>Thể loại nhanh</span>
+            <span className="ml-1 opacity-60">({exploreData.genresCount} thể loại)</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {exploreData.genres.slice(0, 8).map((g) => {
+            {exploreData.genres.map((g) => {
               const isActive = genre === g.slug;
               return (
                 <button
@@ -250,20 +254,6 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                 </button>
               );
             })}
-            {exploreData.genres.length > 8 && (
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); setShowFilters(!showFilters); }}
-                className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
-                style={{
-                  background: "transparent",
-                  color: store.theme.primary,
-                  border: `1px solid ${store.theme.primary}`,
-                }}
-              >
-                +{exploreData.genres.length - 8} thể loại
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -274,14 +264,16 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
           <div className="mb-2 flex items-center gap-2 text-xs font-medium" style={{ color: store.theme.textMuted }}>
             <Globe size={14} />
             <span>Quốc gia</span>
+            <span className="ml-1 opacity-60">({exploreData.countriesCount} quốc gia)</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {exploreData.countries.slice(0, 6).map((c) => {
+            {exploreData.countries.map((c) => {
               const isActive = country === c.slug;
               return (
                 <button
+                  type="button"
                   key={c.slug}
-                  onClick={() => updateFilter("country", isActive ? "" : c.slug)}
+                  onClick={(e) => { e.preventDefault(); updateFilter("country", isActive ? "" : c.slug); }}
                   className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
                   style={{
                     background: isActive ? store.theme.secondary : "transparent",
@@ -290,6 +282,37 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                   }}
                 >
                   {c.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Year Filters - Always Visible */}
+      {exploreData?.years && exploreData.years.length > 0 && (
+        <div className="mb-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium" style={{ color: store.theme.textMuted }}>
+            <Calendar size={14} />
+            <span>Năm phát hành</span>
+            <span className="ml-1 opacity-60">({exploreData.yearsCount} năm)</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {exploreData.years.slice(0, 20).map((y) => {
+              const isActive = year === String(y);
+              return (
+                <button
+                  type="button"
+                  key={y}
+                  onClick={(e) => { e.preventDefault(); updateFilter("year", isActive ? "" : String(y)); }}
+                  className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                  style={{
+                    background: isActive ? store.theme.accent : "transparent",
+                    color: isActive ? store.theme.textInverse : store.theme.textSecondary,
+                    border: `1px solid ${store.theme.border}`,
+                  }}
+                >
+                  {y}
                 </button>
               );
             })}
