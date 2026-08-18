@@ -224,6 +224,76 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         </div>
       </div>
 
+      {/* Quick Genre Filters - Always Visible */}
+      {exploreData?.genres && exploreData.genres.length > 0 && (
+        <div className="mb-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium" style={{ color: store.theme.textMuted }}>
+            <Sparkles size={14} />
+            <span>Thể loại nhanh</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {exploreData.genres.slice(0, 8).map((g) => {
+              const isActive = genre === g.slug;
+              return (
+                <button
+                  key={g.slug}
+                  onClick={() => updateFilter("genre", isActive ? "" : g.slug)}
+                  className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                  style={{
+                    background: isActive ? store.theme.primary : `${store.theme.primaryMuted}`,
+                    color: isActive ? store.theme.textInverse : store.theme.textSecondary,
+                  }}
+                >
+                  {g.name}
+                </button>
+              );
+            })}
+            {exploreData.genres.length > 8 && (
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                style={{
+                  background: "transparent",
+                  color: store.theme.primary,
+                  border: `1px solid ${store.theme.primary}`,
+                }}
+              >
+                +{exploreData.genres.length - 8} thể loại
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Country Filters - Always Visible */}
+      {exploreData?.countries && exploreData.countries.length > 0 && (
+        <div className="mb-4">
+          <div className="mb-2 flex items-center gap-2 text-xs font-medium" style={{ color: store.theme.textMuted }}>
+            <Globe size={14} />
+            <span>Quốc gia</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {exploreData.countries.slice(0, 6).map((c) => {
+              const isActive = country === c.slug;
+              return (
+                <button
+                  key={c.slug}
+                  onClick={() => updateFilter("country", isActive ? "" : c.slug)}
+                  className="rounded-full px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
+                  style={{
+                    background: isActive ? store.theme.secondary : "transparent",
+                    color: isActive ? store.theme.textInverse : store.theme.textSecondary,
+                    border: `1px solid ${store.theme.border}`,
+                  }}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-3">
         <button
