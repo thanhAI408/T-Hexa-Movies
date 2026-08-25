@@ -10,7 +10,7 @@ const VALID_STORES = [
 // ============================================
 // FETCH WITH TIMEOUT
 // ============================================
-async function fetchJson(url: string, timeout = 10000) {
+async function fetchJson(url: string, timeout = 6000) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
   try {
@@ -22,6 +22,77 @@ async function fetchJson(url: string, timeout = 10000) {
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+// Sanitize and sort years: currentYear + 1 down to 1980
+function sanitizeYears(rawYears: (number | string)[]): number[] {
+  const currentYear = new Date().getFullYear();
+  const maxYear = currentYear + 1;
+  const minYear = 1980;
+
+  const valid = Array.from(
+    new Set(
+      rawYears
+        .map((y) => (typeof y === "number" ? y : parseInt(String(y), 10)))
+        .filter((y) => typeof y === "number" && !isNaN(y) && y <= maxYear && y >= minYear)
+    )
+  ).sort((a, b) => b - a);
+
+  if (valid.length === 0) {
+    const fallback: number[] = [];
+    for (let y = maxYear; y >= 2000; y--) {
+      fallback.push(y);
+    }
+    return fallback;
+  }
+  return valid;
+}
+
+function getFallbackGenres() {
+  return [
+    { slug: "hanh-dong", name: "Hành Động" },
+    { slug: "tinh-cam", name: "Tình Cảm" },
+    { slug: "hai-huoc", name: "Hài Hước" },
+    { slug: "co-trang", name: "Cổ Trang" },
+    { slug: "tam-ly", name: "Tâm Lý" },
+    { slug: "hinh-su", name: "Hình Sự" },
+    { slug: "chien-tranh", name: "Chiến Tranh" },
+    { slug: "the-thao", name: "Thể Thao" },
+    { slug: "vo-thuat", name: "Võ Thuật" },
+    { slug: "vien-tuong", name: "Viễn Tưởng" },
+    { slug: "phieu-luu", name: "Phiêu Lưu" },
+    { slug: "khoa-hoc", name: "Khoa Học" },
+    { slug: "kinh-di", name: "Kinh Dị" },
+    { slug: "am-nhac", name: "Âm Nhạc" },
+    { slug: "than-thoai", name: "Thần Thoại" },
+    { slug: "tai-lieu", name: "Tài Liệu" },
+    { slug: "gia-dinh", name: "Gia Đình" },
+    { slug: "chinh-kich", name: "Chính Kịch" },
+    { slug: "bi-an", name: "Bí Ẩn" },
+    { slug: "hoc-duong", name: "Học Đường" },
+    { slug: "kinh-dien", name: "Kinh Điển" },
+  ];
+}
+
+function getFallbackCountries() {
+  return [
+    { slug: "trung-quoc", name: "Trung Quốc" },
+    { slug: "han-quoc", name: "Hàn Quốc" },
+    { slug: "nhat-ban", name: "Nhật Bản" },
+    { slug: "au-my", name: "Âu Mỹ" },
+    { slug: "thai-lan", name: "Thái Lan" },
+    { slug: "viet-nam", name: "Việt Nam" },
+    { slug: "hong-kong", name: "Hồng Kông" },
+    { slug: "dai-loan", name: "Đài Loan" },
+    { slug: "an-do", name: "Ấn Độ" },
+    { slug: "anh", name: "Anh" },
+    { slug: "phap", name: "Pháp" },
+    { slug: "canada", name: "Canada" },
+    { slug: "duc", name: "Đức" },
+    { slug: "tay-ban-nha", name: "Tây Ban Nha" },
+    { slug: "nga", name: "Nga" },
+    { slug: "uc", name: "Úc" },
+  ];
 }
 
 // ============================================
@@ -36,14 +107,14 @@ async function getVsmovExplore() {
 
   const genres = (genresData?.data?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
   const countries = (countriesData?.data?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
-  const years = (yearsData?.data?.items || []).map((y: any) => parseInt(y.slug)).filter(Boolean);
+  const rawYears = (yearsData?.data?.items || []).map((y: any) => y.slug || y.name);
+  const years = sanitizeYears(rawYears);
 
   return {
     provider: "vsmov",
     store: "Bình Minh",
     description: "Khoảnh khắc mặt trời vừa ló - Dịu dàng, thơ, ấm áp",
 
-    // Categories
     categories: [
       { id: "latest", name: "✨ Mới cập nhật", slug: "latest", emoji: "🆕", count: "18K+" },
       { id: "single", name: "🎬 Phim lẻ", slug: "single", emoji: "🎥", path: "danh-sach/phim-le" },
@@ -52,19 +123,15 @@ async function getVsmovExplore() {
       { id: "tvshow", name: "📡 TV Shows", slug: "tvshow", emoji: "📡", path: "danh-sach/tv-shows" },
     ],
 
-    // Genres - ALL 45 genres
-    genres,
-    genresCount: genres.length,
+    genres: genres.length > 0 ? genres : getFallbackGenres(),
+    genresCount: genres.length || getFallbackGenres().length,
 
-    // Countries - ALL 187 countries
-    countries,
-    countriesCount: countries.length,
+    countries: countries.length > 0 ? countries : getFallbackCountries(),
+    countriesCount: countries.length || getFallbackCountries().length,
 
-    // Years - ALL years (from API)
     years,
     yearsCount: years.length,
 
-    // Filter flags
     filters: {
       hasGenres: true,
       hasCountries: true,
@@ -74,7 +141,6 @@ async function getVsmovExplore() {
       hasRating: true,
     },
 
-    // Special filters available
     specialFilters: {
       topViewed: { name: "👁️ Xem nhiều nhất", path: "danh-sach/phim-hot" },
       netflix: { name: "📺 Phim Netflix", path: "the-loai/netflix" },
@@ -84,7 +150,7 @@ async function getVsmovExplore() {
 }
 
 // ============================================
-// OPhim (Ban Mai) - FULL TAXONOMY
+// OPhim (Ban Mai) - FULL TAXONOMY WITH KKPHIM FALLBACK
 // ============================================
 async function getOphimExplore() {
   const [genresData, countriesData, yearsData] = await Promise.all([
@@ -93,10 +159,28 @@ async function getOphimExplore() {
     fetchJson("https://ophim1.com/nam-phat-hanh"),
   ]);
 
-  const genres = (genresData?.data?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
-  const countries = (countriesData?.data?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
-  const yearsRaw: number[] = (yearsData?.data?.items || []).map((y: any) => parseInt(y.year)).filter((n: number) => !isNaN(n));
-  const years = [...new Set(yearsRaw)].sort((a, b) => b - a);
+  let genres = (genresData?.data?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
+  let countries = (countriesData?.data?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
+  let yearsRaw = (yearsData?.data?.items || []).map((y: any) => y.year || y.name || y.slug);
+
+  if (genres.length === 0 || countries.length === 0) {
+    const [kkGenres, kkCountries, kkYears] = await Promise.all([
+      fetchJson("https://phimapi.com/the-loai"),
+      fetchJson("https://phimapi.com/quoc-gia"),
+      fetchJson("https://phimapi.com/nam-phat-hanh"),
+    ]);
+    if (genres.length === 0) {
+      genres = (kkGenres?.data?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
+    }
+    if (countries.length === 0) {
+      countries = (kkCountries?.data?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
+    }
+    if (yearsRaw.length === 0) {
+      yearsRaw = (kkYears?.data?.items || []).map((y: any) => y.year || y.name || y.slug);
+    }
+  }
+
+  const years = sanitizeYears(yearsRaw);
 
   return {
     provider: "ophim",
@@ -112,11 +196,11 @@ async function getOphimExplore() {
       { id: "cinema", name: "🏛️ Phim chiếu rạp", slug: "cinema", emoji: "🏛️", path: "danh-sach/phim-chieu-rap" },
     ],
 
-    genres,
-    genresCount: genres.length,
+    genres: genres.length > 0 ? genres : getFallbackGenres(),
+    genresCount: genres.length || getFallbackGenres().length,
 
-    countries,
-    countriesCount: countries.length,
+    countries: countries.length > 0 ? countries : getFallbackCountries(),
+    countriesCount: countries.length || getFallbackCountries().length,
 
     years,
     yearsCount: years.length,
@@ -133,28 +217,21 @@ async function getOphimExplore() {
 }
 
 // ============================================
-// NguonC (Hoàng Hôn) - LIMITED but available
+// NguonC (Hoàng Hôn)
 // ============================================
 async function getNguoncExplore() {
-  // NguonC có thể có endpoint khác - thử explore
-  const latestData = await fetchJson("https://phim.nguonc.com/api/films/phim-moi-cap-nhat?page=1");
+  const [categoriesData, countriesData] = await Promise.all([
+    fetchJson("https://phim.nguonc.com/api/the-loai"),
+    fetchJson("https://phim.nguonc.com/api/quoc-gia"),
+  ]);
 
-  // Extract available types from data
-  const types: string[] = [];
-  if (latestData?.items) {
-    latestData.items.forEach((item: any) => {
-      if (item.type && !types.includes(item.type)) {
-        types.push(item.type);
-      }
-    });
-  }
+  let genres = (categoriesData?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
+  let countries = (countriesData?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
 
-  // Try to get categories and countries
-  const categoriesData = await fetchJson("https://phim.nguonc.com/api/the-loai");
-  const countriesData = await fetchJson("https://phim.nguonc.com/api/quoc-gia");
+  if (genres.length === 0) genres = getFallbackGenres();
+  if (countries.length === 0) countries = getFallbackCountries();
 
-  const genres = (categoriesData?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
-  const countries = (countriesData?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
+  const years = sanitizeYears([]);
 
   return {
     provider: "nguonc",
@@ -175,13 +252,13 @@ async function getNguoncExplore() {
     countries,
     countriesCount: countries.length,
 
-    years: [],
-    yearsCount: 0,
+    years,
+    yearsCount: years.length,
 
     filters: {
-      hasGenres: genres.length > 0,
-      hasCountries: countries.length > 0,
-      hasYears: false,
+      hasGenres: true,
+      hasCountries: true,
+      hasYears: true,
       hasQuality: true,
       hasSort: true,
       hasRating: false,
@@ -201,8 +278,8 @@ async function getKkphimExplore() {
 
   const genres = (genresData?.data?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
   const countries = (countriesData?.data?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
-  const yearsRaw: number[] = (yearsData?.data?.items || []).map((y: any) => parseInt(y.year)).filter((n: number) => !isNaN(n));
-  const years = [...new Set(yearsRaw)].sort((a, b) => b - a);
+  const rawYears = (yearsData?.data?.items || []).map((y: any) => y.year || y.name || y.slug);
+  const years = sanitizeYears(rawYears);
 
   return {
     provider: "kkphim",
@@ -218,11 +295,11 @@ async function getKkphimExplore() {
       { id: "cinema", name: "🏛️ Phim chiếu rạp", slug: "cinema", emoji: "🏛️", path: "danh-sach/phim-chieu-rap" },
     ],
 
-    genres,
-    genresCount: genres.length,
+    genres: genres.length > 0 ? genres : getFallbackGenres(),
+    genresCount: genres.length || getFallbackGenres().length,
 
-    countries,
-    countriesCount: countries.length,
+    countries: countries.length > 0 ? countries : getFallbackCountries(),
+    countriesCount: countries.length || getFallbackCountries().length,
 
     years,
     yearsCount: years.length,
@@ -267,12 +344,13 @@ export async function GET(
         result = await getKkphimExplore();
         break;
       default:
-        return NextResponse.json({ error: "Unknown provider" }, { status: 404 });
+        result = await getKkphimExplore();
+        break;
     }
 
     return NextResponse.json(result);
   } catch (error) {
     console.error(`[API] Explore ${storeId} error:`, error);
-    return NextResponse.json({ error: "Failed to fetch explore data" }, { status: 500 });
+    return NextResponse.json(await getKkphimExplore());
   }
 }

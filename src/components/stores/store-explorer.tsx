@@ -5,12 +5,12 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Search, X, Loader2, Film, Filter, ChevronDown, ChevronUp, Star,
   Calendar, Sparkles, Play, Clock, TrendingUp, Globe, Check, SlidersHorizontal,
-  Layers, RefreshCw
+  Layers, RefreshCw, ArrowUpDown
 } from "lucide-react";
 import type { StoreConfig } from "@/lib/stores/config";
 
 interface TaxonomyItem {
-  id: string;
+  id?: string;
   name: string;
   slug: string;
 }
@@ -25,12 +25,10 @@ interface ExploreData {
   countriesCount: number;
   years: number[];
   yearsCount: number;
-  regions?: { slug: string; name: string; emoji: string }[];
   filters: {
     hasGenres: boolean;
     hasCountries: boolean;
     hasYears: boolean;
-    hasRegions: boolean;
     hasQuality: boolean;
     hasSort: boolean;
   };
@@ -41,9 +39,11 @@ interface StoreExplorerProps {
 }
 
 const SORT_OPTIONS = [
-  { value: "modified", label: "Mới cập nhật", icon: Clock, emoji: "✨" },
-  { value: "year", label: "Năm mới nhất", icon: Calendar, emoji: "📅" },
-  { value: "view", label: "Xem nhiều nhất", icon: TrendingUp, emoji: "🔥" },
+  { value: "modified", label: "Mới cập nhật", emoji: "✨" },
+  { value: "year", label: "Năm mới nhất", emoji: "📅" },
+  { value: "view", label: "Xem nhiều nhất", emoji: "🔥" },
+  { value: "year_asc", label: "Năm cũ nhất", emoji: "⏳" },
+  { value: "title", label: "Tên phim A-Z", emoji: "🔤" },
 ];
 
 function StoreExplorerContent({ store }: StoreExplorerProps) {
@@ -65,8 +65,8 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 });
   const [loadingMovies, setLoadingMovies] = useState(false);
 
-  // Modal / Drawer state for full taxanomy
-  const [activeModal, setActiveModal] = useState<"genre" | "country" | "all" | null>(null);
+  // Modal / Drawer state for full taxonomy
+  const [activeModal, setActiveModal] = useState<"genre" | "country" | "year" | "all" | null>(null);
   const [modalSearch, setModalSearch] = useState("");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [localQuery, setLocalQuery] = useState(q);
@@ -90,7 +90,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     setLocalQuery(q);
   }, [q]);
 
-  // Fetch explore data
+  // Fetch explore taxonomy
   useEffect(() => {
     async function fetchExplore() {
       try {
@@ -109,7 +109,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     fetchExplore();
   }, [store.slug]);
 
-  // Fetch movies with ALL filters
+  // Fetch movies with ALL active filters
   const fetchMovies = useCallback(async () => {
     setLoadingMovies(true);
     try {
@@ -125,7 +125,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
       if (year) params.set("year", year);
       if (q) params.set("q", q);
 
-      const response = await fetch(`/api/stores/${store.slug}/discover?${params}`);
+      const response = await fetch(`/api/stores/${store.slug}/discover?${params.toString()}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -143,7 +143,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     fetchMovies();
   }, [fetchMovies]);
 
-  // Update filter
+  // Update a single filter in query params
   const updateFilter = useCallback((key: string, value: string, shouldScroll = true) => {
     const newParams = new URLSearchParams(searchParams.toString());
     if (value) {
@@ -163,7 +163,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     }
   }, [router, pathname, searchParams]);
 
-  // Search
+  // Handle Search Submission
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     const newParams = new URLSearchParams(searchParams.toString());
@@ -176,26 +176,71 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
   }, [localQuery, router, pathname, searchParams]);
 
-  // Clear all filters
+  // Clear all filters back to default
   const clearFilters = useCallback(() => {
     const newParams = new URLSearchParams();
-    newParams.set("kind", kind);
+    if (kind && kind !== "latest") newParams.set("kind", kind);
     newParams.set("page", "1");
     router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
     setLocalQuery("");
   }, [router, pathname, kind]);
 
   // Active filters count
-  const activeFiltersCount = [genre, country, year, q].filter(Boolean).length;
+  const activeFiltersCount = [
+    genre,
+    country,
+    year,
+    q,
+    sort !== "modified" ? sort : ""
+  ].filter(Boolean).length;
 
   const currentCategory = exploreData?.categories.find(c => c.id === kind);
 
-  // Top popular genres & countries to showcase in quick bar without flooding the screen
+  // Dynamic Page & Section Heading
+  const activeTitle = useMemo(() => {
+    if (q) return `Kết quả tìm kiếm cho "${q}"`;
+    
+    const parts: string[] = [];
+    if (genre) {
+      const gName = exploreData?.genres.find(g => g.slug === genre)?.name;
+      if (gName) parts.push(`Thể loại ${gName}`);
+    }
+    if (country) {
+      const cName = exploreData?.countries.find(c => c.slug === country)?.name;
+      if (cName) parts.push(`Quốc gia ${cName}`);
+    }
+    if (year) {
+      parts.push(`Năm ${year}`);
+    }
+
+    if (parts.length > 0) {
+      const catLabel = kind && kind !== "latest" ? (currentCategory?.name.replace(/^[^\s]+\s/, "") || "") : "Phim";
+      return `${catLabel} • ${parts.join(" • ")}`;
+    }
+
+    if (sort === "year") {
+      return "Phim phát hành mới nhất (Năm mới nhất)";
+    }
+    if (sort === "year_asc") {
+      return "Phim phát hành cũ nhất";
+    }
+    if (sort === "view") {
+      return "Phim xem nhiều nhất";
+    }
+    if (sort === "title") {
+      return "Danh sách phim (A - Z)";
+    }
+
+    return currentCategory?.name || "Mới cập nhật";
+  }, [q, genre, country, year, kind, sort, exploreData, currentCategory]);
+
+  // Popular curated genres (10 items)
   const popularGenres = useMemo(() => {
     if (!exploreData?.genres) return [];
     return exploreData.genres.slice(0, 10);
   }, [exploreData]);
 
+  // Popular curated countries (8 items)
   const popularCountries = useMemo(() => {
     if (!exploreData?.countries) return [];
     const prioritySlugs = ["viet-nam", "han-quoc", "trung-quoc", "au-my", "nhat-ban", "thai-lan", "hong-kong", "dai-loan", "anh", "phap"];
@@ -204,12 +249,13 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     return [...prioritized, ...others].slice(0, 8);
   }, [exploreData]);
 
+  // Popular curated years (clean sanitized years)
   const popularYears = useMemo(() => {
     if (!exploreData?.years) return [];
     return exploreData.years.slice(0, 7);
   }, [exploreData]);
 
-  // Filtered modal items based on search
+  // Filtered modal items based on search query
   const filteredModalGenres = useMemo(() => {
     if (!exploreData?.genres) return [];
     if (!modalSearch.trim()) return exploreData.genres;
@@ -328,7 +374,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         </div>
       </div>
 
-      {/* 2. REFINED FILTER SYSTEM: Curated Quick Bars + Expandable All-Taxonomy Modal */}
+      {/* 2. REFINED FILTER SYSTEM: Curated Quick Bars + Expandable Modal Drawer */}
       <div 
         className="rounded-2xl border p-4 sm:p-5 backdrop-blur-xl space-y-3.5"
         style={{
@@ -368,7 +414,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                 );
               })}
 
-              {/* Button to open All 45 Genres Modal */}
+              {/* Button to open All Genres Modal */}
               <button
                 type="button"
                 onClick={() => { setModalSearch(""); setActiveModal("genre"); }}
@@ -417,7 +463,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                 );
               })}
 
-              {/* Button to open All 187 Countries Modal with Search */}
+              {/* Button to open All Countries Modal */}
               <button
                 type="button"
                 onClick={() => { setModalSearch(""); setActiveModal("country"); }}
@@ -464,6 +510,22 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                 </button>
               );
             })}
+
+            {exploreData?.years && exploreData.years.length > popularYears.length && (
+              <button
+                type="button"
+                onClick={() => { setModalSearch(""); setActiveModal("year"); }}
+                className="shrink-0 flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all hover:scale-105"
+                style={{
+                  background: "transparent",
+                  color: store.theme.accent,
+                  border: `1px dashed ${store.theme.accent}`,
+                }}
+              >
+                <span>+{exploreData.years.length - popularYears.length} năm</span>
+                <ChevronDown size={12} />
+              </button>
+            )}
           </div>
 
           {/* Action Tools: All Filters & Sort Dropdown */}
@@ -499,18 +561,18 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                 className="flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all duration-200 hover:scale-105"
                 style={{
                   background: store.theme.surface,
-                  borderColor: store.theme.border,
-                  color: store.theme.text,
+                  borderColor: sort !== "modified" ? store.theme.primary : store.theme.border,
+                  color: sort !== "modified" ? store.theme.primary : store.theme.text,
                 }}
               >
-                <span>{SORT_OPTIONS.find(s => s.value === sort)?.emoji}</span>
-                <span className="hidden sm:inline">{SORT_OPTIONS.find(s => s.value === sort)?.label}</span>
+                <span>{SORT_OPTIONS.find(s => s.value === sort)?.emoji || "✨"}</span>
+                <span className="hidden sm:inline">{SORT_OPTIONS.find(s => s.value === sort)?.label || "Mới cập nhật"}</span>
                 <ChevronDown size={14} className={`transition-transform duration-200 ${showSortDropdown ? "rotate-180" : ""}`} />
               </button>
 
               {showSortDropdown && (
                 <div
-                  className="absolute right-0 top-full z-50 mt-2 min-w-[190px] overflow-hidden rounded-2xl border p-1.5 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
+                  className="absolute right-0 top-full z-50 mt-2 min-w-[200px] overflow-hidden rounded-2xl border p-1.5 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150"
                   style={{ background: store.theme.surface, borderColor: store.theme.border }}
                 >
                   {SORT_OPTIONS.map((option) => {
@@ -545,8 +607,8 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         </div>
       </div>
 
-      {/* 3. ACTIVE FILTER CHIPS BAR (If any filters applied) */}
-      {(genre || country || year || q) && (
+      {/* 3. ACTIVE FILTER CHIPS BAR */}
+      {(genre || country || year || q || (sort && sort !== "modified")) && (
         <div className="flex flex-wrap items-center gap-2 pt-1 animate-in fade-in duration-200">
           <span className="text-xs font-medium" style={{ color: store.theme.textMuted }}>
             Đang lọc:
@@ -591,6 +653,19 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
             </button>
           )}
 
+          {sort && sort !== "modified" && (
+            <button
+              type="button"
+              onClick={() => updateFilter("sort", "modified")}
+              className="group flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-all hover:scale-105"
+              style={{ background: store.theme.primaryMuted, color: store.theme.primary, border: `1px solid ${store.theme.border}` }}
+            >
+              <ArrowUpDown size={12} />
+              <span>{SORT_OPTIONS.find(s => s.value === sort)?.label}</span>
+              <X size={12} className="opacity-70 group-hover:opacity-100" />
+            </button>
+          )}
+
           {q && (
             <button
               type="button"
@@ -616,11 +691,11 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         </div>
       )}
 
-      {/* 4. RESULTS HEADER */}
+      {/* 4. RESULTS HEADER WITH DYNAMIC TITLE */}
       <div className="flex items-center justify-between pt-1">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: store.theme.text }}>
-            {currentCategory?.emoji} {currentCategory?.name.replace(/^[^\s]+\s/, "") || "Tất cả phim"}
+            {activeTitle}
           </h2>
           <p className="text-xs sm:text-sm font-medium mt-0.5" style={{ color: store.theme.textMuted }}>
             {loadingMovies ? (
@@ -662,7 +737,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               const movieSlug = movie.providerSlug || movie.slug;
               const poster = movie.posterUrl || movie.thumb_url || movie.poster_url;
               const title = movie.title || movie.name;
-              const quality = movie.quality || (movie.tmdb?.vote_average ? `⭐ ${movie.tmdb.vote_average.toFixed(1)}` : null);
+              const quality = movie.quality || (movie.rating ? `⭐ ${movie.rating.toFixed(1)}` : null);
 
               return (
                 <a
@@ -726,9 +801,9 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                     )}
 
                     {/* Type Badge (Top-Right) */}
-                    {(movie.type === "series" || movie.type === "hoathinh" || movie.type === "tvshows") && (
+                    {(movie.type === "series" || movie.type === "animation" || movie.type === "tvshow") && (
                       <span className="absolute right-2.5 top-2.5 rounded-lg bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10">
-                        {movie.type === "series" ? "📺 Bộ" : movie.type === "hoathinh" ? "🎨 Hoạt hình" : "📡 Show"}
+                        {movie.type === "series" ? "📺 Bộ" : movie.type === "animation" ? "🎨 Hoạt hình" : "📡 Show"}
                       </span>
                     )}
 
@@ -750,10 +825,10 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                       {title}
                     </h3>
                     <div className="flex items-center justify-between text-xs" style={{ color: store.theme.textMuted }}>
-                      <span>{movie.year || "—"}</span>
-                      {movie.category && movie.category[0] && (
-                        <span className="truncate max-w-[100px] text-[11px] opacity-80">
-                          {movie.category[0].name}
+                      <span className="font-semibold">{movie.year || "—"}</span>
+                      {movie.quality && (
+                        <span className="truncate max-w-[100px] text-[11px] opacity-80 font-medium">
+                          {movie.quality}
                         </span>
                       )}
                     </div>
@@ -870,7 +945,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         </div>
       )}
 
-      {/* 7. ALL-IN-ONE FILTER & TAXONOMY MODAL / DRAWER (Cleans up the screen!) */}
+      {/* 7. ALL-IN-ONE TAXONOMY MODAL DRAWER */}
       {activeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
           <div 
@@ -890,6 +965,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                   <h3 className="text-base font-bold" style={{ color: store.theme.text }}>
                     {activeModal === "genre" && `Tất cả Thể Loại (${exploreData?.genresCount || 0})`}
                     {activeModal === "country" && `Tất cả Quốc Gia (${exploreData?.countriesCount || 0})`}
+                    {activeModal === "year" && `Tất cả Năm Phát Hành (${exploreData?.yearsCount || 0})`}
                     {activeModal === "all" && "Bộ Lọc Khám Phá Toàn Diện"}
                   </h3>
                   <p className="text-xs" style={{ color: store.theme.textMuted }}>
@@ -907,38 +983,40 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               </button>
             </div>
 
-            {/* Modal Search Input for taxonomy */}
-            <div className="p-4 border-b" style={{ borderColor: store.theme.border, background: `${store.theme.background}60` }}>
-              <div className="relative flex items-center">
-                <Search size={16} className="absolute left-3.5" style={{ color: store.theme.textMuted }} />
-                <input
-                  type="text"
-                  value={modalSearch}
-                  onChange={(e) => setModalSearch(e.target.value)}
-                  placeholder={
-                    activeModal === "genre" ? "Tìm nhanh thể loại (ví dụ: Hành động, Kinh dị...)" :
-                    activeModal === "country" ? "Tìm nhanh quốc gia (ví dụ: Hàn Quốc, Mỹ, Pháp...)" :
-                    "Tìm kiếm nhanh trong bộ lọc..."
-                  }
-                  className="w-full rounded-xl border bg-transparent py-2.5 pl-10 pr-9 text-sm outline-none transition-all"
-                  style={{ borderColor: store.theme.border, color: store.theme.text }}
-                />
-                {modalSearch && (
-                  <button
-                    type="button"
-                    onClick={() => setModalSearch("")}
-                    className="absolute right-3 text-xs"
-                    style={{ color: store.theme.textMuted }}
-                  >
-                    <X size={14} />
-                  </button>
-                )}
+            {/* Modal Search Input (if genre, country or all) */}
+            {activeModal !== "year" && (
+              <div className="p-4 border-b" style={{ borderColor: store.theme.border, background: `${store.theme.background}60` }}>
+                <div className="relative flex items-center">
+                  <Search size={16} className="absolute left-3.5" style={{ color: store.theme.textMuted }} />
+                  <input
+                    type="text"
+                    value={modalSearch}
+                    onChange={(e) => setModalSearch(e.target.value)}
+                    placeholder={
+                      activeModal === "genre" ? "Tìm nhanh thể loại (ví dụ: Hành động, Kinh dị...)" :
+                      activeModal === "country" ? "Tìm nhanh quốc gia (ví dụ: Hàn Quốc, Mỹ, Pháp...)" :
+                      "Tìm kiếm nhanh trong bộ lọc..."
+                    }
+                    className="w-full rounded-xl border bg-transparent py-2.5 pl-10 pr-9 text-sm outline-none transition-all"
+                    style={{ borderColor: store.theme.border, color: store.theme.text }}
+                  />
+                  {modalSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setModalSearch("")}
+                      className="absolute right-3 text-xs"
+                      style={{ color: store.theme.textMuted }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Modal Content Scroll Area */}
             <div className="flex-1 overflow-y-auto p-5 space-y-6">
-              {/* Show Genres if activeModal is 'genre' or 'all' */}
+              {/* Show Genres */}
               {(activeModal === "genre" || activeModal === "all") && (
                 <div>
                   <h4 className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-3" style={{ color: store.theme.textMuted }}>
@@ -980,15 +1058,10 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                       );
                     })}
                   </div>
-                  {filteredModalGenres.length === 0 && (
-                    <p className="text-xs text-center py-4" style={{ color: store.theme.textMuted }}>
-                      Không có thể loại khớp với "{modalSearch}"
-                    </p>
-                  )}
                 </div>
               )}
 
-              {/* Show Countries if activeModal is 'country' or 'all' */}
+              {/* Show Countries */}
               {(activeModal === "country" || activeModal === "all") && (
                 <div>
                   <h4 className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-3" style={{ color: store.theme.textMuted }}>
@@ -1030,21 +1103,16 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                       );
                     })}
                   </div>
-                  {filteredModalCountries.length === 0 && (
-                    <p className="text-xs text-center py-4" style={{ color: store.theme.textMuted }}>
-                      Không có quốc gia khớp với "{modalSearch}"
-                    </p>
-                  )}
                 </div>
               )}
 
-              {/* Show Years if activeModal is 'all' */}
-              {activeModal === "all" && exploreData?.years && (
+              {/* Show Years */}
+              {(activeModal === "year" || activeModal === "all") && exploreData?.years && (
                 <div>
                   <h4 className="flex items-center justify-between text-xs font-bold uppercase tracking-wider mb-3" style={{ color: store.theme.textMuted }}>
                     <span className="flex items-center gap-1.5">
                       <Calendar size={14} style={{ color: store.theme.accent }} />
-                      Năm Phát Hành
+                      Năm Phát Hành ({exploreData.years.length})
                     </span>
                     {year && (
                       <button 
@@ -1063,8 +1131,11 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                         <button
                           key={y}
                           type="button"
-                          onClick={() => updateFilter("year", isActive ? "" : String(y))}
-                          className="rounded-xl px-3 py-2 text-xs font-medium transition-all text-center"
+                          onClick={() => {
+                            updateFilter("year", isActive ? "" : String(y));
+                            if (activeModal === "year") setActiveModal(null);
+                          }}
+                          className="rounded-xl px-3 py-2 text-xs font-semibold transition-all text-center"
                           style={{
                             background: isActive ? store.theme.accent : store.theme.surface,
                             color: isActive ? store.theme.textInverse : store.theme.text,
