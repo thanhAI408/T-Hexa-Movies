@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { AlertCircle, RotateCcw, ExternalLink } from "lucide-react";
+import { useState, useRef } from "react";
+import { AlertCircle, RotateCcw, Sparkles, Film, Radio } from "lucide-react";
 import type { StoreConfig } from "@/lib/stores/config";
 
 interface WatchPlayerProps {
@@ -16,8 +16,6 @@ interface WatchPlayerProps {
 
 export function WatchPlayer({
   store,
-  movieSlug,
-  movieTitle,
   embedUrl,
   streamUrl,
   quality,
@@ -31,165 +29,77 @@ export function WatchPlayer({
   if (!embedUrl && !streamUrl) {
     return (
       <div
-        className="relative flex aspect-video w-full flex-col items-center justify-center overflow-hidden rounded-2xl border"
+        className="relative flex aspect-video w-full flex-col items-center justify-center overflow-hidden rounded-3xl border p-8"
         style={{
-          background: `${store.theme.surface}`,
-          borderColor: `${store.theme.primary}30`,
+          background: store.theme.surface,
+          borderColor: store.theme.border,
+          boxShadow: store.theme.shadowLg,
         }}
       >
-        <div className="absolute inset-0 opacity-20" style={{ background: `radial-gradient(circle at 50% 50%, ${store.theme.primary}30 0%, transparent 50%)` }} />
+        <div 
+          className="absolute inset-0 opacity-25" 
+          style={{ background: `radial-gradient(circle at 50% 50%, ${store.theme.glow} 0%, transparent 60%)` }} 
+        />
 
-        <div className="relative text-center">
+        <div className="relative text-center space-y-3 z-10">
           <div
-            className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl"
-            style={{ background: `linear-gradient(135deg, ${store.theme.primary}20, ${store.theme.glow}20)` }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl"
+            style={{ background: store.theme.primaryMuted, color: store.theme.primary }}
           >
-            <AlertCircle size={40} style={{ color: store.theme.primary }} />
+            <AlertCircle size={32} />
           </div>
-          <p className="text-xl font-bold" style={{ color: store.theme.text }}>
-            Không có nguồn video
-          </p>
-          <p className="mt-2 text-sm" style={{ color: store.theme.muted }}>
-            Phim này hiện không có nguồn phát video
+          <h3 className="text-lg font-bold" style={{ color: store.theme.text }}>
+            Không tìm thấy nguồn phát video
+          </h3>
+          <p className="text-xs max-w-sm text-slate-400" style={{ color: store.theme.textMuted }}>
+            Tập phim này hiện đang được cập nhật hoặc máy chủ tạm thời không phản hồi. Vui lòng chọn tập hoặc máy chủ khác.
           </p>
         </div>
       </div>
     );
   }
 
-  // If embed URL, show iframe player
-  if (embedUrl) {
-    return (
-      <div className="relative w-full">
-        <div
-          className="relative aspect-video w-full overflow-hidden rounded-2xl"
-          style={{
-            boxShadow: `0 20px 60px ${store.theme.glow}`,
-          }}
-        >
-          {/* Video iframe */}
+  return (
+    <div className="relative w-full space-y-4">
+      {/* Ambient Theater Backlight Glow */}
+      <div
+        className="absolute -inset-4 sm:-inset-6 rounded-3xl opacity-35 blur-3xl pointer-events-none transition-all duration-700"
+        style={{
+          background: `radial-gradient(ellipse at 50% 50%, ${store.theme.primary} 0%, ${store.theme.secondary} 40%, transparent 80%)`,
+        }}
+      />
+
+      {/* Video Viewport Box */}
+      <div
+        className="relative aspect-video w-full overflow-hidden rounded-3xl border shadow-2xl backdrop-blur-2xl"
+        style={{
+          borderColor: store.theme.border,
+          boxShadow: `0 20px 60px -15px ${store.theme.glow}, 0 0 1px 1px ${store.theme.border}`,
+          background: "#000000",
+        }}
+      >
+        {embedUrl ? (
           <iframe
             ref={iframeRef}
             src={embedUrl}
-            className="h-full w-full"
+            className="h-full w-full border-0"
             allowFullScreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             referrerPolicy="strict-origin-when-cross-origin"
-            style={{ background: store.theme.background }}
+            style={{ background: "#000000" }}
             onLoad={() => setIsLoading(false)}
             onError={() => {
               setIsLoading(false);
               setHasError(true);
             }}
           />
-
-          {/* Watermark click blocker - bottom right where VSMOV watermark usually appears */}
-          <div
-            className="absolute bottom-2 right-2 h-8 w-20 cursor-default"
-            style={{ pointerEvents: "auto" }}
-            onClick={(e) => e.preventDefault()}
-            onMouseDown={(e) => e.preventDefault()}
-          />
-
-          {/* Loading overlay */}
-          {isLoading && (
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ background: `${store.theme.background}f0` }}
-            >
-              <div className="text-center">
-                <div
-                  className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-transparent"
-                  style={{ borderTopColor: store.theme.primary }}
-                />
-                <p className="text-sm font-medium" style={{ color: store.theme.muted }}>
-                  Đang tải video...
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Error overlay */}
-          {hasError && (
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ background: `${store.theme.background}f0` }}
-            >
-              <div className="text-center">
-                <div
-                  className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
-                  style={{ background: `${store.theme.primary}20` }}
-                >
-                  <AlertCircle size={32} style={{ color: store.theme.primary }} />
-                </div>
-                <p className="text-lg font-bold" style={{ color: store.theme.text }}>
-                  Video không khả dụng
-                </p>
-                <p className="mt-2 text-sm" style={{ color: store.theme.muted }}>
-                  Hãy thử chọn tập hoặc nguồn khác
-                </p>
-                <button
-                  onClick={() => {
-                    setHasError(false);
-                    setIsLoading(true);
-                    window.location.reload();
-                  }}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold transition-all hover:scale-105"
-                  style={{ background: store.theme.primary, color: "#fff" }}
-                >
-                  <RotateCcw size={18} />
-                  Tải lại
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Video Info Bar */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {quality && (
-              <span
-                className="rounded-full px-4 py-2 text-sm font-semibold"
-                style={{
-                  background: `${store.theme.primary}15`,
-                  color: store.theme.primary,
-                }}
-              >
-                {quality}
-              </span>
-            )}
-            {language && (
-              <span className="text-sm" style={{ color: store.theme.muted }}>
-                Ngôn ngữ: {language}
-              </span>
-            )}
-          </div>
-
-          <p className="text-xs" style={{ color: store.theme.muted }}>
-            Điều khiển video nằm trong player. Nếu video không phát, hãy thử chọn tập khác.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // If direct stream URL, show native video player
-  if (streamUrl) {
-    return (
-      <div className="relative w-full">
-        <div
-          className="relative aspect-video w-full overflow-hidden rounded-2xl"
-          style={{
-            boxShadow: `0 20px 60px ${store.theme.glow}`,
-          }}
-        >
+        ) : streamUrl ? (
           <video
             src={streamUrl}
             controls
             autoPlay
             className="h-full w-full"
-            style={{ background: store.theme.background }}
+            style={{ background: "#000000" }}
             playsInline
             onLoadedData={() => setIsLoading(false)}
             onError={() => {
@@ -199,77 +109,103 @@ export function WatchPlayer({
           >
             <track kind="captions" />
           </video>
+        ) : null}
 
-          {/* Loading overlay */}
-          {isLoading && (
+        {/* Anti-watermark overlay */}
+        <div
+          className="absolute bottom-2 right-2 h-8 w-20 cursor-default pointer-events-auto"
+          onClick={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.preventDefault()}
+        />
+
+        {/* Loading overlay */}
+        {isLoading && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center backdrop-blur-md"
+            style={{ background: `${store.theme.background}e6` }}
+          >
             <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ background: `${store.theme.background}f0` }}
-            >
-              <div
-                className="h-16 w-16 animate-spin rounded-full border-4 border-transparent"
-                style={{ borderTopColor: store.theme.primary }}
-              />
-            </div>
-          )}
-
-          {/* Error overlay */}
-          {hasError && (
-            <div
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ background: `${store.theme.background}f0` }}
-            >
-              <div className="text-center">
-                <div
-                  className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
-                  style={{ background: `${store.theme.primary}20` }}
-                >
-                  <AlertCircle size={32} style={{ color: store.theme.primary }} />
-                </div>
-                <p className="text-lg font-bold" style={{ color: store.theme.text }}>
-                  Video không khả dụng
-                </p>
-                <button
-                  onClick={() => {
-                    setHasError(false);
-                    setIsLoading(true);
-                    window.location.reload();
-                  }}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl px-6 py-3 font-semibold"
-                  style={{ background: store.theme.primary, color: "#fff" }}
-                >
-                  <RotateCcw size={18} />
-                  Tải lại
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Quality & Language Info */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {quality && (
-              <span
-                className="rounded-full px-4 py-2 text-sm font-semibold"
-                style={{
-                  background: `${store.theme.primary}15`,
-                  color: store.theme.primary,
-                }}
-              >
-                {quality}
-              </span>
-            )}
-            {language && (
-              <span className="text-sm" style={{ color: store.theme.muted }}>
-                Ngôn ngữ: {language}
-              </span>
-            )}
+              className="h-12 w-12 animate-spin rounded-full border-3 border-transparent"
+              style={{ borderTopColor: store.theme.primary, borderRightColor: store.theme.accent }}
+            />
+            <p className="mt-4 text-xs font-bold uppercase tracking-widest" style={{ color: store.theme.text }}>
+              Đang kết nối tín hiệu rạp...
+            </p>
           </div>
-        </div>
-      </div>
-    );
-  }
+        )}
 
-  return null;
+        {/* Error overlay */}
+        {hasError && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center backdrop-blur-xl"
+            style={{ background: `${store.theme.background}fa` }}
+          >
+            <div
+              className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{ background: store.theme.primaryMuted, color: store.theme.primary }}
+            >
+              <AlertCircle size={28} />
+            </div>
+            <h3 className="text-base font-bold" style={{ color: store.theme.text }}>
+              Tín hiệu luồng bị gián đoạn
+            </h3>
+            <p className="mt-1 text-xs max-w-sm" style={{ color: store.theme.textMuted }}>
+              Máy chủ phản hồi chậm hoặc tập phim cần làm mới.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setHasError(false);
+                setIsLoading(true);
+                window.location.reload();
+              }}
+              className="mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-all hover:scale-105 shadow-lg"
+              style={{ background: store.theme.gradientAccent, color: "#fff" }}
+            >
+              <RotateCcw size={14} />
+              Tải lại trang
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Video Bar Info */}
+      <div 
+        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3.5 sm:px-5 backdrop-blur-xl"
+        style={{ background: store.theme.surface, borderColor: store.theme.border }}
+      >
+        <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold">
+          <span 
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-white"
+            style={{ background: store.theme.gradientAccent }}
+          >
+            <Radio size={12} className="animate-pulse" />
+            <span>Trực Tuyến</span>
+          </span>
+
+          {quality && (
+            <span 
+              className="rounded-lg px-2.5 py-1 border font-bold uppercase tracking-wider"
+              style={{ background: store.theme.primaryMuted, borderColor: store.theme.border, color: store.theme.primary }}
+            >
+              {quality}
+            </span>
+          )}
+
+          {language && (
+            <span 
+              className="rounded-lg px-2.5 py-1 border"
+              style={{ background: store.theme.surface, borderColor: store.theme.border, color: store.theme.textSecondary }}
+            >
+              Ngôn ngữ: {language}
+            </span>
+          )}
+        </div>
+
+        <p className="text-[11px] font-medium" style={{ color: store.theme.textMuted }}>
+          💡 Mẹo: Bật chế độ Toàn màn hình để có trải nghiệm xem tốt nhất
+        </p>
+      </div>
+    </div>
+  );
 }

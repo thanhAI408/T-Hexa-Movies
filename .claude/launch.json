@@ -7,6 +7,10 @@
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
       "url": "http://localhost:3000"
+    },
+    {
+      "name": "Vercel Stores",
+      "url": "https://t-hexa-movies.vercel.app/stores"
     }
   ]
 }

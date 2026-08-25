@@ -130,57 +130,70 @@ export default async function MovieDetailPage({ params }: Props) {
       <StoreHeader store={store} />
 
       {/* Backdrop & Info */}
-      <section className="relative">
-        {/* Backdrop */}
+      <section className="relative overflow-hidden">
+        {/* Backdrop Banner */}
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
           style={{
             backgroundImage: movieInfo.backdropUrl
               ? `url(${movieInfo.backdropUrl})`
               : movieInfo.posterUrl
                 ? `url(${movieInfo.posterUrl})`
                 : "none",
+            filter: "brightness(0.7) blur(2px)",
           }}
         >
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(to bottom, ${store.theme.background}99 0%, ${store.theme.background}ee 60%, ${store.theme.background} 100%)`,
-            }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `linear-gradient(to right, ${store.theme.background}99 0%, transparent 60%)`,
+              background: `
+                linear-gradient(to bottom, 
+                  ${store.theme.background}aa 0%, 
+                  ${store.theme.background}f2 60%, 
+                  ${store.theme.background} 100%
+                ),
+                linear-gradient(to right,
+                  ${store.theme.background}f2 0%,
+                  ${store.theme.background}aa 50%,
+                  transparent 100%
+                )
+              `,
             }}
           />
         </div>
 
-        {/* Glow */}
+        {/* Ambient Halo */}
         <div
-          className="absolute -right-40 top-0 h-96 w-96 rounded-full opacity-20 blur-3xl"
+          className="absolute -right-20 top-10 h-96 w-96 rounded-full opacity-30 blur-3xl pointer-events-none"
           style={{ background: store.theme.primary }}
         />
 
-        {/* Content */}
-        <div className="page-shell relative py-8 md:py-12">
+        {/* Main Info Shell */}
+        <div className="page-shell relative z-10 py-8 sm:py-12">
           {/* Back Button */}
           <Link
             href={`/stores/${store.slug}`}
-            className="mb-6 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-white/10"
-            style={{ color: store.theme.muted }}
+            className="mb-8 inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold tracking-wide border transition-all duration-300 hover:scale-105 active:scale-95"
+            style={{
+              color: store.theme.text,
+              background: store.theme.surface,
+              borderColor: store.theme.border,
+              boxShadow: store.theme.shadowSm,
+            }}
           >
-            <ArrowLeft size={18} />
-            Quay lại {store.name}
+            <ArrowLeft size={16} />
+            <span>Quay lại {store.name}</span>
           </Link>
 
-          <div className="flex flex-col gap-6 md:flex-row md:gap-8">
-            {/* Poster */}
-            <div className="shrink-0">
+          <div className="flex flex-col gap-8 md:flex-row md:gap-10 items-start">
+            {/* Poster Card */}
+            <div className="shrink-0 w-full sm:w-auto flex justify-center">
               <div
-                className="relative aspect-[2/3] w-40 overflow-hidden rounded-2xl md:w-56"
+                className="relative aspect-[2/3] w-48 sm:w-60 md:w-72 overflow-hidden rounded-3xl border shadow-2xl transition-transform duration-500 hover:scale-102"
                 style={{
-                  boxShadow: `0 20px 60px ${store.theme.glow}`,
+                  borderColor: store.theme.border,
+                  boxShadow: `0 25px 60px -12px ${store.theme.glow}`,
+                  background: store.theme.surface,
                 }}
               >
                 {movieInfo.posterUrl ? (
@@ -190,22 +203,22 @@ export default async function MovieDetailPage({ params }: Props) {
                     fill
                     className="object-cover"
                     priority
-                    sizes="(max-width: 768px) 160px, 224px"
+                    sizes="(max-width: 768px) 192px, 288px"
                   />
                 ) : (
                   <div
                     className="flex h-full w-full items-center justify-center"
                     style={{ background: store.theme.surface }}
                   >
-                    <Film size={48} style={{ color: store.theme.muted }} />
+                    <Film size={54} style={{ color: store.theme.textMuted }} />
                   </div>
                 )}
 
                 {/* Quality Badge */}
                 {movieInfo.quality && (
                   <div
-                    className="absolute left-3 top-3 rounded-md px-2 py-1 text-xs font-bold text-white"
-                    style={{ background: store.theme.primary }}
+                    className="absolute left-3.5 top-3.5 rounded-xl px-3 py-1 text-xs font-black text-white uppercase tracking-wider shadow-lg"
+                    style={{ background: store.theme.gradientAccent }}
                   >
                     {movieInfo.quality}
                   </div>
@@ -213,74 +226,73 @@ export default async function MovieDetailPage({ params }: Props) {
               </div>
             </div>
 
-            {/* Info */}
-            <div className="flex-1">
-              <h1
-                className="text-2xl font-bold tracking-tight md:text-4xl"
-                style={{ color: store.theme.text }}
-              >
-                {movieInfo.title}
-              </h1>
+            {/* Movie Info Details */}
+            <div className="flex-1 space-y-5">
+              <div>
+                <h1
+                  className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-tight"
+                  style={{ color: store.theme.text }}
+                >
+                  {movieInfo.title}
+                </h1>
 
-              {movieInfo.originalTitle && movieInfo.originalTitle !== movieInfo.title && (
-                <p className="mt-1 text-lg" style={{ color: store.theme.muted }}>
-                  {movieInfo.originalTitle}
-                </p>
-              )}
+                {movieInfo.originalTitle && movieInfo.originalTitle !== movieInfo.title && (
+                  <p className="mt-1.5 text-base sm:text-xl font-medium" style={{ color: store.theme.textSecondary }}>
+                    {movieInfo.originalTitle}
+                  </p>
+                )}
+              </div>
 
-              {/* Meta */}
-              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm" style={{ color: store.theme.muted }}>
+              {/* Meta Badges */}
+              <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold">
                 {movieInfo.year && (
-                  <span className="flex items-center gap-1.5">
-                    <Calendar size={14} />
+                  <span 
+                    className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 border"
+                    style={{ background: store.theme.surface, borderColor: store.theme.border, color: store.theme.text }}
+                  >
+                    <Calendar size={14} style={{ color: store.theme.accent }} />
                     {movieInfo.year}
                   </span>
                 )}
-                {movieInfo.quality && (
-                  <span
-                    className="rounded px-2 py-0.5 text-xs font-bold"
-                    style={{ background: store.theme.primary, color: "#fff" }}
-                  >
-                    {movieInfo.quality}
-                  </span>
-                )}
                 {movieInfo.durationMinutes && (
-                  <span className="flex items-center gap-1.5">
-                    <Clock size={14} />
+                  <span 
+                    className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 border"
+                    style={{ background: store.theme.surface, borderColor: store.theme.border, color: store.theme.text }}
+                  >
+                    <Clock size={14} style={{ color: store.theme.primary }} />
                     {movieInfo.durationMinutes} phút
                   </span>
                 )}
                 {movieInfo.type && (
-                  <span className="flex items-center gap-1.5">
+                  <span 
+                    className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 border"
+                    style={{ background: store.theme.primaryMuted, borderColor: store.theme.border, color: store.theme.primary }}
+                  >
                     <Film size={14} />
-                    {movieInfo.type === "single" && "Phim lẻ"}
-                    {movieInfo.type === "series" && "Phim bộ"}
-                    {movieInfo.type === "animation" && "Hoạt hình"}
-                    {movieInfo.type === "tvshow" && "TV Show"}
+                    {movieInfo.type === "single" ? "Phim lẻ" : movieInfo.type === "series" ? "Phim bộ" : "Hoạt hình"}
                   </span>
                 )}
                 {movieInfo.totalEpisodes && (
-                  <span className="flex items-center gap-1.5">
-                    <span
-                      className="rounded px-2 py-0.5 text-xs"
-                      style={{ background: `${store.theme.primary}20`, color: store.theme.primary }}
-                    >
-                      {movieInfo.totalEpisodes} tập
-                    </span>
+                  <span
+                    className="rounded-xl px-3 py-1.5 border font-bold"
+                    style={{ background: store.theme.primaryMuted, borderColor: store.theme.primary, color: store.theme.primary }}
+                  >
+                    {movieInfo.totalEpisodes} tập
                   </span>
                 )}
               </div>
 
-              {/* Genres */}
+              {/* Genres Pills */}
               {movieInfo.genres.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
                   {movieInfo.genres.map((genre) => (
                     <span
                       key={genre.id}
-                      className="rounded-full px-3 py-1 text-xs font-medium"
+                      className="rounded-full px-3.5 py-1 text-xs font-semibold border"
                       style={{
-                        background: `${store.theme.primary}15`,
-                        color: store.theme.primary,
+                        background: store.theme.surface,
+                        borderColor: store.theme.border,
+                        color: store.theme.textSecondary,
                       }}
                     >
                       {genre.name}
@@ -291,44 +303,59 @@ export default async function MovieDetailPage({ params }: Props) {
 
               {/* Countries */}
               {movieInfo.countries.length > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-sm" style={{ color: store.theme.muted }}>
-                  <span className="text-xs">Quốc gia:</span>
+                <div className="flex flex-wrap items-center gap-2 text-xs" style={{ color: store.theme.textMuted }}>
+                  <span className="font-semibold uppercase tracking-wider">Quốc gia:</span>
                   {movieInfo.countries.map((country) => (
-                    <span key={country.id} className="text-xs">
+                    <span 
+                      key={country.id} 
+                      className="rounded-lg px-2.5 py-0.5 border"
+                      style={{ background: store.theme.surface, borderColor: store.theme.border, color: store.theme.textSecondary }}
+                    >
                       {country.name}
                     </span>
                   ))}
                 </div>
               )}
 
-              {/* Description */}
+              {/* Synopsis / Description */}
               {movieInfo.description && (
-                <p className="mt-5 max-w-2xl text-sm leading-relaxed md:text-base" style={{ color: store.theme.muted }}>
-                  {movieInfo.description}
-                </p>
+                <div 
+                  className="rounded-2xl border p-4 sm:p-5 backdrop-blur-xl"
+                  style={{ background: `${store.theme.surface}80`, borderColor: store.theme.border }}
+                >
+                  <h3 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: store.theme.primary }}>
+                    Tóm tắt nội dung
+                  </h3>
+                  <p className="text-xs sm:text-sm leading-relaxed" style={{ color: store.theme.textSecondary }}>
+                    {movieInfo.description}
+                  </p>
+                </div>
               )}
 
               {/* Directors & Actors */}
               {(movieInfo.directors.length > 0 || movieInfo.actors.length > 0) && (
-                <div className="mt-5 space-y-2">
+                <div 
+                  className="rounded-2xl border p-4 sm:p-5 backdrop-blur-xl space-y-3"
+                  style={{ background: `${store.theme.surface}80`, borderColor: store.theme.border }}
+                >
                   {movieInfo.directors.length > 0 && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <span className="shrink-0 font-medium" style={{ color: store.theme.primary }}>
+                    <div className="flex items-start gap-2 text-xs sm:text-sm">
+                      <span className="shrink-0 font-bold uppercase tracking-wider text-xs" style={{ color: store.theme.primary }}>
                         Đạo diễn:
                       </span>
-                      <span style={{ color: store.theme.muted }}>
+                      <span style={{ color: store.theme.text }}>
                         {movieInfo.directors.join(", ")}
                       </span>
                     </div>
                   )}
                   {movieInfo.actors.length > 0 && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <span className="shrink-0 font-medium" style={{ color: store.theme.primary }}>
+                    <div className="flex items-start gap-2 text-xs sm:text-sm">
+                      <span className="shrink-0 font-bold uppercase tracking-wider text-xs" style={{ color: store.theme.primary }}>
                         Diễn viên:
                       </span>
-                      <span style={{ color: store.theme.muted }}>
-                        {movieInfo.actors.slice(0, 8).join(", ")}
-                        {movieInfo.actors.length > 8 && ` +${movieInfo.actors.length - 8} người khác`}
+                      <span style={{ color: store.theme.textSecondary }}>
+                        {movieInfo.actors.slice(0, 10).join(", ")}
+                        {movieInfo.actors.length > 10 && ` +${movieInfo.actors.length - 10} người khác`}
                       </span>
                     </div>
                   )}
@@ -336,40 +363,37 @@ export default async function MovieDetailPage({ params }: Props) {
               )}
 
               {/* Action Buttons */}
-              <div className="mt-6 flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 {uniqueEpisodes.length > 0 && (
                   <Link
                     href={`/stores/${store.slug}/watch/${movieSlug}?episode=${encodeURIComponent(uniqueEpisodes[0].episodeKey)}`}
-                    className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all hover:scale-105"
-                    style={{ background: store.theme.primary, color: "#fff" }}
+                    className="group flex items-center gap-2.5 rounded-2xl px-8 py-3.5 text-sm sm:text-base font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl"
+                    style={{
+                      background: store.theme.gradientAccent,
+                      color: store.theme.textInverse,
+                      boxShadow: `0 8px 30px ${store.theme.glow}`,
+                    }}
                   >
-                    <Play size={18} fill="white" />
-                    <span>Xem ngay</span>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
+                      <Play size={15} fill="currentColor" className="ml-0.5" />
+                    </div>
+                    <span>Xem Phim Ngay</span>
                   </Link>
                 )}
                 <button
-                  className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition-all hover:scale-105"
+                  type="button"
+                  className="flex items-center gap-2 rounded-2xl border px-6 py-3.5 text-xs sm:text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95"
                   style={{
-                    background: `${store.theme.primary}15`,
-                    color: store.theme.primary,
+                    background: store.theme.surface,
+                    borderColor: store.theme.border,
+                    color: store.theme.text,
+                    boxShadow: store.theme.shadowSm,
                   }}
                 >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
                   <span>Yêu thích</span>
-                </button>
-                <button
-                  className="flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition-all hover:scale-105"
-                  style={{
-                    background: `${store.theme.surface}50`,
-                    color: store.theme.text,
-                  }}
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  <span>Chia sẻ</span>
                 </button>
               </div>
             </div>
@@ -377,18 +401,22 @@ export default async function MovieDetailPage({ params }: Props) {
         </div>
       </section>
 
-      {/* Episodes */}
+      {/* Episodes Section */}
       {uniqueEpisodes.length > 0 && (
-        <section className="page-shell py-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold" style={{ color: store.theme.text }}>
-              Danh sách tập
+        <section className="page-shell py-10 pb-20">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b" style={{ borderColor: store.theme.border }}>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: store.theme.text }}>
+              Danh Sách Tập Phim
             </h2>
-            <span className="text-sm" style={{ color: store.theme.muted }}>
+            <span 
+              className="rounded-full px-3.5 py-1 text-xs font-bold" 
+              style={{ background: store.theme.primaryMuted, color: store.theme.primary }}
+            >
               {uniqueEpisodes.length} tập
             </span>
           </div>
-          <div className="mt-4">
+
+          <div className="mt-2">
             <EpisodeList
               store={store}
               movieSlug={movieSlug}

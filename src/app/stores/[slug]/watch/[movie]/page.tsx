@@ -7,6 +7,7 @@ import { STORES } from "@/lib/stores/config";
 import { StoreProvider } from "@/components/stores/theme-provider";
 import { getMovieDetail } from "@/lib/stores/actions";
 import { WatchPlayer } from "@/components/stores/watch-player";
+import { EpisodeList } from "@/components/stores/episode-list";
 
 interface Props {
   params: Promise<{ slug: string; movie: string }>;
@@ -74,62 +75,67 @@ export default async function WatchPage({ params, searchParams }: Props) {
 
   return (
     <StoreProvider store={store}>
-      <div className="min-h-screen" style={{ background: store.theme.background }}>
+      <div className="min-h-screen transition-colors duration-500" style={{ background: store.theme.background }}>
         {/* Header */}
         <header
-          className="sticky top-0 z-50 border-b backdrop-blur-xl"
+          className="sticky top-0 z-40 border-b backdrop-blur-2xl transition-colors duration-500"
           style={{
             backgroundColor: `${store.theme.background}ee`,
-            borderColor: `${store.theme.primary}20`,
+            borderColor: store.theme.border,
           }}
         >
-          <div className="page-shell flex h-14 items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="page-shell flex h-16 items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5 min-w-0">
               <Link
                 href={`/stores/${store.slug}/movie/${movie}`}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-white/10"
-                style={{ color: store.theme.muted }}
+                className="flex shrink-0 items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold tracking-wide transition-all duration-300 hover:scale-105 active:scale-95"
+                style={{
+                  color: store.theme.text,
+                  background: store.theme.surface,
+                  borderColor: store.theme.border,
+                  boxShadow: store.theme.shadowSm,
+                }}
               >
-                <ArrowLeft size={18} />
-                <span>Quay lại</span>
+                <ArrowLeft size={16} />
+                <span className="hidden sm:inline">Chi tiết phim</span>
               </Link>
 
-              <div className="h-4 w-px" style={{ backgroundColor: `${store.theme.primary}30` }} />
+              <div className="h-5 w-px opacity-30 shrink-0" style={{ backgroundColor: store.theme.textMuted }} />
 
-              <div>
+              <div className="min-w-0">
                 <h1
-                  className="text-sm font-semibold line-clamp-1"
+                  className="text-xs sm:text-sm md:text-base font-bold truncate tracking-tight"
                   style={{ color: store.theme.text }}
                 >
                   {movieInfo.title}
                 </h1>
                 {selectedEpisode && (
-                  <p className="text-xs" style={{ color: store.theme.muted }}>
+                  <p className="text-[11px] font-semibold" style={{ color: store.theme.primary }}>
                     {selectedEpisode.episodeLabel || `Tập ${selectedEpisode.episodeNumber || 1}`}
                   </p>
                 )}
               </div>
             </div>
 
+            {/* Quick Actions */}
             <div className="flex items-center gap-2">
-              <button
-                className="flex items-center gap-2 rounded-lg p-2 text-sm transition-all hover:bg-white/10"
-                style={{ color: store.theme.muted }}
+              <Link
+                href={`/stores/${store.slug}`}
+                className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all hover:scale-105"
+                style={{
+                  background: store.theme.surface,
+                  borderColor: store.theme.border,
+                  color: store.theme.textSecondary,
+                }}
               >
-                <Settings size={18} />
-              </button>
-              <button
-                className="flex items-center gap-2 rounded-lg p-2 text-sm transition-all hover:bg-white/10"
-                style={{ color: store.theme.muted }}
-              >
-                <Maximize size={18} />
-              </button>
+                <span>{store.name}</span>
+              </Link>
             </div>
           </div>
         </header>
 
-        {/* Video Player */}
-        <div className="page-shell py-6">
+        {/* Theater Video Player Section */}
+        <div className="page-shell py-6 sm:py-8">
           <WatchPlayer
             store={store}
             movieSlug={movie}
@@ -141,144 +147,31 @@ export default async function WatchPage({ params, searchParams }: Props) {
           />
         </div>
 
-        {/* Episode List */}
-        <div className="page-shell pb-12">
-          <h2
-            className="mb-4 text-lg font-semibold"
-            style={{ color: store.theme.text }}
-          >
-            Chọn tập phim
-          </h2>
-
-          {/* Quick Episode Selection */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            {uniqueEpisodes.slice(0, 20).map((ep, index) => {
-              const epNumber = ep.episodeNumber ?? index + 1;
-              const isActive = ep.episodeKey === selectedEpisode?.episodeKey;
-
-              return (
-                <Link
-                  key={ep.episodeKey}
-                  href={`/stores/${store.slug}/watch/${movie}?episode=${encodeURIComponent(ep.episodeKey)}`}
-                  className="flex h-10 min-w-10 items-center justify-center rounded-lg border px-3 text-sm font-medium transition-all hover:scale-105"
-                  style={{
-                    background: isActive ? store.theme.primary : "transparent",
-                    borderColor: `${store.theme.primary}40`,
-                    color: isActive ? "#fff" : store.theme.text,
-                  }}
-                >
-                  {ep.episodeLabel || epNumber}
-                </Link>
-              );
-            })}
-
-            {uniqueEpisodes.length > 20 && (
-              <span className="flex h-10 items-center px-3 text-sm" style={{ color: store.theme.muted }}>
-                +{uniqueEpisodes.length - 20} tập khác
-              </span>
-            )}
+        {/* Episode Selector Section */}
+        <div className="page-shell pb-20">
+          <div className="flex items-center justify-between pb-4 mb-6 border-b" style={{ borderColor: store.theme.border }}>
+            <div>
+              <h2 className="text-lg sm:text-xl font-black tracking-tight" style={{ color: store.theme.text }}>
+                Chọn Tập Phim
+              </h2>
+              <p className="text-xs" style={{ color: store.theme.textMuted }}>
+                Nhấp vào tập bạn muốn xem để chuyển nguồn phát
+              </p>
+            </div>
+            <span
+              className="rounded-full px-3 py-1 text-xs font-bold"
+              style={{ background: store.theme.primaryMuted, color: store.theme.primary }}
+            >
+              {uniqueEpisodes.length} tập
+            </span>
           </div>
 
-          {/* All Episodes Table for Series */}
-          {uniqueEpisodes.length > 0 && (
-            <div
-              className="rounded-2xl border overflow-hidden"
-              style={{
-                borderColor: `${store.theme.primary}20`,
-                background: `${store.theme.surface}50`,
-              }}
-            >
-              <table className="w-full">
-                <thead>
-                  <tr
-                    className="border-b"
-                    style={{ borderColor: `${store.theme.primary}20` }}
-                  >
-                    <th
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase"
-                      style={{ color: store.theme.muted }}
-                    >
-                      Tập
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase"
-                      style={{ color: store.theme.muted }}
-                    >
-                      Tiêu đề
-                    </th>
-                    <th
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase"
-                      style={{ color: store.theme.muted }}
-                    >
-                      Chất lượng
-                    </th>
-                    <th
-                      className="px-4 py-3 text-right text-xs font-semibold uppercase"
-                      style={{ color: store.theme.muted }}
-                    >
-                      Hành động
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {uniqueEpisodes.map((ep, index) => {
-                    const epNumber = ep.episodeNumber ?? index + 1;
-                    const isActive = ep.episodeKey === selectedEpisode?.episodeKey;
-
-                    return (
-                      <tr
-                        key={`watch-${ep.episodeKey}`}
-                        className="border-b transition-colors hover:bg-white/5"
-                        style={{ borderColor: `${store.theme.primary}10` }}
-                      >
-                        <td
-                          className="px-4 py-3 text-sm font-medium"
-                          style={{ color: isActive ? store.theme.primary : store.theme.text }}
-                        >
-                          {ep.episodeLabel || `Tập ${epNumber}`}
-                        </td>
-                        <td
-                          className="px-4 py-3 text-sm"
-                          style={{ color: store.theme.muted }}
-                        >
-                          {ep.episodeTitle || "-"}
-                        </td>
-                        <td
-                          className="px-4 py-3 text-sm"
-                          style={{ color: store.theme.muted }}
-                        >
-                          {ep.quality && (
-                            <span
-                              className="rounded px-2 py-0.5 text-xs font-medium"
-                              style={{
-                                background: `${store.theme.primary}20`,
-                                color: store.theme.primary,
-                              }}
-                            >
-                              {ep.quality}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <Link
-                            href={`/stores/${store.slug}/watch/${movie}?episode=${encodeURIComponent(ep.episodeKey)}`}
-                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
-                            style={{
-                              background: isActive ? store.theme.primary : `${store.theme.primary}20`,
-                              color: isActive ? "#fff" : store.theme.primary,
-                            }}
-                          >
-                            <Play size={12} fill="currentColor" />
-                            Xem
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <EpisodeList
+            store={store}
+            movieSlug={movie}
+            episodes={uniqueEpisodes}
+            currentEpisodeKey={selectedEpisode?.episodeKey}
+          />
         </div>
       </div>
     </StoreProvider>

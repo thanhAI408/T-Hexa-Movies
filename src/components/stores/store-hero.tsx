@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Play, ChevronRight, Sparkles, Heart, Share2, Calendar, Clock, Film } from "lucide-react";
+import { Play, ChevronRight, Sparkles, Heart, Calendar, Clock, Film } from "lucide-react";
 import type { StoreConfig } from "@/lib/stores/config";
 import type { ProviderMovieInput } from "@/types/catalog";
 import { useState, useEffect, useRef } from "react";
@@ -29,7 +29,7 @@ export function StoreHero({ store }: StoreHeroProps) {
         console.error("Failed to fetch featured movie:", error);
       } finally {
         setLoading(false);
-        setTimeout(() => setIsVisible(true), 100);
+        setTimeout(() => setIsVisible(true), 50);
       }
     }
 
@@ -52,12 +52,11 @@ export function StoreHero({ store }: StoreHeroProps) {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // Theme mood
   const themeMood = {
-    'binh-minh': { emoji: '🌅', name: 'Bình Minh', tagline: 'Khoảnh khắc mặt trời vừa ló' },
-    'ban-mai': { emoji: '☀️', name: 'Ban Mai', tagline: 'Buổi sáng tươi đẹp' },
-    'hoang-hon': { emoji: '🌆', name: 'Hoàng Hôn', tagline: 'Cuối ngày điện ảnh' },
-    'da-nguyet': { emoji: '🌙', name: 'Dạ Nguyệt', tagline: 'Đêm trăng huyền bí' },
+    'binh-minh': { emoji: '🌅', name: 'Bình Minh', tagline: 'Khoảnh khắc mặt trời vừa ló — Dịu dàng, ấm áp, đậm chất thơ' },
+    'ban-mai': { emoji: '☀️', name: 'Ban Mai', tagline: 'Buổi sáng tươi đẹp — Tràn đầy năng lượng tích cực' },
+    'hoang-hon': { emoji: '🌆', name: 'Hoàng Hôn', tagline: 'Cuối ngày điện ảnh — Sâu lắng, ấm áp, hoài niệm' },
+    'da-nguyet': { emoji: '🌙', name: 'Dạ Nguyệt', tagline: 'Đêm trăng huyền bí — Sang trọng, cuốn hút, tĩnh lặng' },
   };
 
   const mood = themeMood[store.slug as keyof typeof themeMood] || themeMood['hoang-hon'];
@@ -66,158 +65,106 @@ export function StoreHero({ store }: StoreHeroProps) {
   if (loading) {
     return (
       <section className="relative overflow-hidden" style={{ background: store.theme.background }}>
-        {/* Animated gradient background */}
-        <div
-          className="absolute inset-0 animate-pulse"
-          style={{
-            background: `radial-gradient(ellipse at 30% 50%, ${store.theme.primary}15 0%, transparent 50%),
-                         radial-gradient(ellipse at 70% 50%, ${store.theme.secondary}15 0%, transparent 50%)`,
-          }}
-        />
-
-        <div className="page-shell relative flex h-[450px] items-center">
-          <div className="max-w-2xl space-y-5">
-            <div
-              className="h-8 w-40 rounded-full animate-pulse"
-              style={{ background: `${store.theme.surface}` }}
-            />
-            <div
-              className="h-14 w-96 rounded-xl animate-pulse"
-              style={{ background: `${store.theme.surface}` }}
-            />
-            <div
-              className="h-20 w-full max-w-lg rounded animate-pulse"
-              style={{ background: `${store.theme.surface}` }}
-            />
+        <div className="page-shell relative flex min-h-[420px] items-center py-16">
+          <div className="max-w-2xl space-y-4">
+            <div className="h-8 w-44 rounded-full skeleton" />
+            <div className="h-12 w-full max-w-lg rounded-2xl skeleton" />
+            <div className="h-6 w-3/4 rounded-xl skeleton" />
+            <div className="flex gap-3 pt-2">
+              <div className="h-12 w-36 rounded-2xl skeleton" />
+              <div className="h-12 w-32 rounded-2xl skeleton" />
+            </div>
           </div>
         </div>
       </section>
     );
   }
 
-  // No featured movie - show welcome
+  // Fallback if no featured movie
   if (!featuredMovie) {
     return (
-      <section className="relative overflow-hidden" style={{ background: store.theme.background }}>
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(circle at 50% 50%, ${store.theme.primary}15 0%, transparent 50%)`,
-          }}
-        />
-
-        <div className="page-shell relative py-24 text-center">
-          <div className="mx-auto max-w-md">
-            <div className="text-8xl mb-6 animate-bounce">
-              {mood.emoji}
-            </div>
-
-            <h2 className="text-3xl font-bold" style={{ color: store.theme.text }}>
-              Chào mừng đến {store.name}
-            </h2>
-
-            <p className="mt-4" style={{ color: store.theme.textSecondary }}>
-              {mood.tagline}
-            </p>
-
-            <Link
-              href={`/stores/${store.slug}`}
-              className="mt-8 inline-flex items-center gap-2 rounded-2xl px-8 py-4 text-lg font-bold transition-all duration-300 hover:scale-105"
-              style={{
-                background: store.theme.gradientAccent,
-                color: store.theme.textInverse,
-                boxShadow: `0 10px 40px ${store.theme.glow}`,
-              }}
-            >
-              <Play size={24} fill="currentColor" />
-              Khám phá ngay
-            </Link>
-          </div>
+      <section className="relative overflow-hidden py-20 text-center" style={{ background: store.theme.background }}>
+        <div className="page-shell relative z-10 max-w-xl mx-auto space-y-6">
+          <div className="text-7xl animate-bounce">{mood.emoji}</div>
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={{ color: store.theme.text }}>
+            Chào mừng đến {store.name}
+          </h2>
+          <p className="text-base leading-relaxed" style={{ color: store.theme.textSecondary }}>
+            {mood.tagline}
+          </p>
         </div>
       </section>
     );
   }
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden" style={{ background: store.theme.background }}>
-      {/* Dynamic parallax background */}
+    <section 
+      ref={sectionRef} 
+      className="relative overflow-hidden transition-colors duration-500" 
+      style={{ background: store.theme.background }}
+    >
+      {/* Background with Ambient Backdrop Blur */}
       <div
-        className="absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-out"
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out"
         style={{
           backgroundImage: featuredMovie.backdropUrl
             ? `url(${featuredMovie.backdropUrl})`
             : featuredMovie.posterUrl
               ? `url(${featuredMovie.posterUrl})`
               : "none",
-          transform: `scale(1.1) translate(${(mousePos.x - 50) * 0.02}%, ${(mousePos.y - 50) * 0.02}%)`,
+          transform: `scale(1.06) translate(${(mousePos.x - 50) * 0.015}%, ${(mousePos.y - 50) * 0.015}%)`,
+          filter: "brightness(0.85)",
         }}
       >
-        {/* Multi-layer gradient overlay */}
+        {/* Multi-layer gradient overlays for perfect text contrast */}
         <div
           className="absolute inset-0"
           style={{
             background: `
-              linear-gradient(to bottom,
-                ${store.theme.background}ee 0%,
-                ${store.theme.background}99 20%,
+              linear-gradient(to right,
+                ${store.theme.background} 0%,
+                ${store.theme.background}f2 35%,
+                ${store.theme.background}aa 65%,
+                ${store.theme.background}50 100%
+              ),
+              linear-gradient(to top,
+                ${store.theme.background} 0%,
                 ${store.theme.background}80 40%,
-                ${store.theme.background}ee 100%
+                transparent 100%
               )
             `,
           }}
         />
 
-        {/* Spotlight effect */}
+        {/* Ambient spotlight follow mouse */}
         <div
-          className="pointer-events-none absolute inset-0 transition-all duration-1000"
+          className="pointer-events-none absolute inset-0 transition-opacity duration-1000"
           style={{
-            background: `radial-gradient(600px circle at ${mousePos.x}% ${mousePos.y}%, ${store.theme.primary}15 0%, transparent 40%)`,
-            opacity: isVisible ? 1 : 0,
+            background: `radial-gradient(700px circle at ${mousePos.x}% ${mousePos.y}%, ${store.theme.glow} 0%, transparent 60%)`,
+            opacity: isVisible ? 0.35 : 0,
           }}
         />
       </div>
 
-      {/* Floating decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              left: `${10 + i * 12}%`,
-              top: `${15 + (i % 4) * 20}%`,
-              animation: `float-${i % 4} ${6 + i}s ease-in-out infinite`,
-              animationDelay: `${i * 0.5}s`,
-            }}
-          >
-            <div
-              className="h-2 w-2 rounded-full opacity-30"
-              style={{ background: store.theme.primary }}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="page-shell relative py-16 md:py-24 lg:py-32">
+      {/* Main Content Banner */}
+      <div className="page-shell relative py-12 sm:py-16 md:py-20 lg:py-24">
         <div
-          className="max-w-3xl transition-all duration-1000"
+          className="max-w-2xl lg:max-w-3xl transition-all duration-700 space-y-4"
           style={{
-            transform: isVisible ? "translateY(0)" : "translateY(40px)",
+            transform: isVisible ? "translateY(0)" : "translateY(24px)",
             opacity: isVisible ? 1 : 0,
           }}
         >
-          {/* Theme badge */}
+          {/* Mood Badge */}
           <div
-            className="inline-flex items-center gap-3 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-700"
+            className="inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 text-xs font-bold tracking-wide shadow-sm"
             style={{
-              background: `${store.theme.primaryMuted}`,
+              background: store.theme.primaryMuted,
               color: store.theme.primary,
               border: `1px solid ${store.theme.border}`,
-              transform: isVisible ? "translateX(0)" : "translateX(-30px)",
             }}
           >
-            <span className="text-2xl">{mood.emoji}</span>
+            <span className="text-base">{mood.emoji}</span>
             <span>{mood.name}</span>
             <span className="relative flex h-2 w-2">
               <span
@@ -233,12 +180,10 @@ export function StoreHero({ store }: StoreHeroProps) {
 
           {/* Title */}
           <h1
-            className="mt-8 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl transition-all duration-700"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]"
             style={{
               color: store.theme.text,
-              textShadow: `0 4px 30px ${store.theme.glow}`,
-              transform: isVisible ? "translateY(0)" : "translateY(30px)",
-              transitionDelay: "100ms",
+              textShadow: `0 4px 24px ${store.theme.glow}`,
             }}
           >
             {featuredMovie.title}
@@ -246,79 +191,78 @@ export function StoreHero({ store }: StoreHeroProps) {
 
           {featuredMovie.originalTitle && featuredMovie.originalTitle !== featuredMovie.title && (
             <p
-              className="mt-3 text-xl md:text-2xl transition-all duration-700"
-              style={{
-                color: store.theme.textSecondary,
-                transform: isVisible ? "translateY(0)" : "translateY(30px)",
-                transitionDelay: "150ms",
-              }}
+              className="text-base sm:text-lg md:text-xl font-medium"
+              style={{ color: store.theme.textSecondary }}
             >
               {featuredMovie.originalTitle}
             </p>
           )}
 
-          {/* Meta badges */}
-          <div
-            className="mt-6 flex flex-wrap items-center gap-3 transition-all duration-700"
-            style={{
-              transform: isVisible ? "translateY(0)" : "translateY(30px)",
-              transitionDelay: "200ms",
-            }}
-          >
+          {/* Meta Tags Bar */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
             {featuredMovie.quality && (
               <span
-                className="rounded-lg px-4 py-1.5 text-sm font-bold uppercase tracking-wider"
-                style={{
-                  background: store.theme.gradientAccent,
-                  color: store.theme.textInverse,
-                  boxShadow: `0 4px 15px ${store.theme.glow}`,
-                }}
+                className="rounded-lg px-3 py-1 font-extrabold uppercase tracking-wider text-white shadow-md"
+                style={{ background: store.theme.gradientAccent }}
               >
                 {featuredMovie.quality}
               </span>
             )}
             {featuredMovie.year && (
-              <span className="flex items-center gap-2 rounded-lg px-4 py-1.5 text-sm font-medium" style={{ background: `${store.theme.surface}80`, color: store.theme.text }}>
-                <Calendar size={14} />
+              <span
+                className="flex items-center gap-1 rounded-lg px-3 py-1 font-semibold border backdrop-blur-md"
+                style={{
+                  background: `${store.theme.surface}90`,
+                  borderColor: store.theme.border,
+                  color: store.theme.text,
+                }}
+              >
+                <Calendar size={13} style={{ color: store.theme.accent }} />
                 {featuredMovie.year}
               </span>
             )}
             {featuredMovie.durationMinutes && (
-              <span className="flex items-center gap-2 text-sm" style={{ color: store.theme.textSecondary }}>
-                <Clock size={14} />
+              <span
+                className="flex items-center gap-1 rounded-lg px-3 py-1 font-semibold border backdrop-blur-md"
+                style={{
+                  background: `${store.theme.surface}90`,
+                  borderColor: store.theme.border,
+                  color: store.theme.text,
+                }}
+              >
+                <Clock size={13} style={{ color: store.theme.primary }} />
                 {featuredMovie.durationMinutes} phút
               </span>
             )}
             {featuredMovie.type && (
-              <span className="rounded-lg px-4 py-1.5 text-sm font-medium" style={{ background: `${store.theme.primaryMuted}`, color: store.theme.primary }}>
-                <Film size={14} className="inline mr-1" />
-                {featuredMovie.type === "single" && "Phim lẻ"}
-                {featuredMovie.type === "series" && "Phim bộ"}
-                {featuredMovie.type === "animation" && "Hoạt hình"}
+              <span
+                className="flex items-center gap-1 rounded-lg px-3 py-1 font-semibold border backdrop-blur-md"
+                style={{
+                  background: store.theme.primaryMuted,
+                  borderColor: store.theme.border,
+                  color: store.theme.primary,
+                }}
+              >
+                <Film size={13} />
+                {featuredMovie.type === "single" ? "Phim lẻ" : featuredMovie.type === "series" ? "Phim bộ" : "Hoạt hình"}
               </span>
             )}
           </div>
 
-          {/* Genres */}
-          {featuredMovie.genres.length > 0 && (
-            <div
-              className="mt-5 flex flex-wrap gap-2 transition-all duration-700"
-              style={{
-                transform: isVisible ? "translateY(0)" : "translateY(30px)",
-                transitionDelay: "250ms",
-              }}
-            >
-              {featuredMovie.genres.slice(0, 4).map((genre) => (
+          {/* Genres Chips */}
+          {featuredMovie.genres && featuredMovie.genres.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {featuredMovie.genres.slice(0, 4).map((g) => (
                 <span
-                  key={genre.id}
-                  className="rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-300 hover:scale-105"
+                  key={g.id}
+                  className="rounded-full px-3 py-0.5 text-[11px] font-semibold border"
                   style={{
-                    background: `${store.theme.primaryMuted}`,
-                    color: store.theme.primary,
-                    border: `1px solid ${store.theme.border}`,
+                    background: `${store.theme.surface}80`,
+                    borderColor: store.theme.border,
+                    color: store.theme.textSecondary,
                   }}
                 >
-                  {genre.name}
+                  {g.name}
                 </span>
               ))}
             </div>
@@ -327,96 +271,55 @@ export function StoreHero({ store }: StoreHeroProps) {
           {/* Description */}
           {featuredMovie.description && (
             <p
-              className="mt-6 max-w-2xl text-base leading-relaxed line-clamp-3 md:text-lg transition-all duration-700"
-              style={{
-                color: store.theme.textSecondary,
-                transform: isVisible ? "translateY(0)" : "translateY(30px)",
-                transitionDelay: "300ms",
-              }}
+              className="line-clamp-3 text-xs sm:text-sm leading-relaxed max-w-xl pt-1"
+              style={{ color: store.theme.textSecondary }}
             >
               {featuredMovie.description}
             </p>
           )}
 
-          {/* Action Buttons */}
-          <div
-            className="mt-10 flex flex-wrap items-center gap-4 transition-all duration-700"
-            style={{
-              transform: isVisible ? "translateY(0)" : "translateY(30px)",
-              transitionDelay: "400ms",
-            }}
-          >
+          {/* Action CTAs */}
+          <div className="flex flex-wrap items-center gap-3 pt-3">
             <Link
               href={`/stores/${store.slug}/watch/${featuredMovie.providerSlug}?episode=1`}
-              className="group relative flex items-center gap-3 rounded-2xl px-10 py-5 text-lg font-bold transition-all duration-500 hover:scale-105 hover:shadow-2xl"
+              className="group flex items-center gap-2.5 rounded-2xl px-8 py-3.5 text-sm sm:text-base font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl"
               style={{
                 background: store.theme.gradientAccent,
                 color: store.theme.textInverse,
-                boxShadow: `0 10px 40px ${store.theme.glow}`,
+                boxShadow: `0 8px 30px ${store.theme.glow}`,
               }}
             >
-              <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/20 transition-transform duration-300 group-hover:scale-110">
-                <Play size={28} fill="currentColor" className="ml-1" />
-              </span>
-              <span className="relative">Xem ngay</span>
-              <ChevronRight size={22} className="relative transition-transform duration-300 group-hover:translate-x-2" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+                <Play size={16} fill="currentColor" className="ml-0.5" />
+              </div>
+              <span>Xem ngay</span>
+              <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
             </Link>
 
             <Link
               href={`/stores/${store.slug}/movie/${featuredMovie.providerSlug}`}
-              className="group flex items-center gap-2 rounded-2xl px-6 py-5 text-base font-medium transition-all duration-300 hover:scale-105"
+              className="flex items-center gap-2 rounded-2xl px-6 py-3.5 text-xs sm:text-sm font-semibold border backdrop-blur-xl transition-all duration-300 hover:scale-105 active:scale-95"
               style={{
-                background: `${store.theme.surface}80`,
+                background: `${store.theme.surface}95`,
+                borderColor: store.theme.border,
                 color: store.theme.text,
-                border: `1px solid ${store.theme.border}`,
+                boxShadow: store.theme.shadowSm,
               }}
             >
-              <Sparkles size={20} style={{ color: store.theme.primary }} />
-              <span>Chi tiết</span>
+              <Sparkles size={16} style={{ color: store.theme.primary }} />
+              <span>Thông tin chi tiết</span>
             </Link>
-
-            <button
-              className="group flex items-center gap-2 rounded-2xl px-6 py-5 text-base font-medium transition-all duration-300 hover:scale-105"
-              style={{
-                background: `${store.theme.primaryMuted}`,
-                color: store.theme.primary,
-              }}
-            >
-              <Heart size={20} className="transition-transform duration-300 group-hover:scale-125" />
-              <span>Yêu thích</span>
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Gradient fade */}
+      {/* Subtle bottom fade */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none"
+        className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
         style={{
           background: `linear-gradient(to bottom, transparent 0%, ${store.theme.background} 100%)`,
         }}
       />
-
-      <style jsx global>{`
-        @keyframes float-0 {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(180deg); }
-        }
-        @keyframes float-1 {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(-90deg); }
-        }
-        @keyframes float-2 {
-          0%, 100% { transform: translateY(0) scale(1); }
-          50% { transform: translateY(-25px) scale(1.2); }
-        }
-        @keyframes float-3 {
-          0%, 100% { transform: translate(0, 0); }
-          25% { transform: translate(10px, -10px); }
-          50% { transform: translate(0, -20px); }
-          75% { transform: translate(-10px, -10px); }
-        }
-      `}</style>
     </section>
   );
 }
