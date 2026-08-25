@@ -205,7 +205,7 @@ async function discoverVsmov(params: {
   const cdnBase = data.pathImage || data.APP_DOMAIN_CDN_IMAGE;
   let items = (data.items || []).map((m: any) => normalizeMovie(m, "vsmov", cdnBase));
 
-  if (params.kind && params.kind !== "latest") {
+  if (params.kind && params.kind !== "latest" && !url.pathname.includes("/danh-sach/") && !url.pathname.includes("/the-loai/hoat-hinh")) {
     items = items.filter((m: any) => m.type === params.kind);
   }
   if (params.year && !url.pathname.includes("/nam/")) {
@@ -215,19 +215,24 @@ async function discoverVsmov(params: {
   items = sortMovies(items, params.sort || (params.year ? "year" : "modified"));
 
   const pagination = data.pagination || {};
+  const totalItems = parseInt(pagination.totalItems || items.length, 10);
+  const itemsPerPage = parseInt(pagination.totalItemsPerPage || params.limit, 10);
+  const currentPage = parseInt(pagination.currentPage || params.page, 10);
+  const totalPages = parseInt(pagination.totalPages || Math.ceil(totalItems / itemsPerPage) || 1, 10);
+
   return {
     items,
     pagination: {
-      currentPage: parseInt(pagination.currentPage || String(params.page)),
-      totalPages: pagination.totalPages || Math.ceil(items.length / params.limit) || 1,
-      totalItems: pagination.totalItems || items.length,
-      itemsPerPage: params.limit,
+      currentPage,
+      totalPages,
+      totalItems,
+      itemsPerPage,
     },
   };
 }
 
 // ============================================
-// KKPhim - Advanced Query Parameters
+// KKPhim - Advanced Dedicated Query Endpoints
 // ============================================
 async function discoverKkphim(params: {
   kind?: string;
@@ -240,10 +245,16 @@ async function discoverKkphim(params: {
   limit: number;
 }) {
   const baseUrl = "https://phimapi.com";
-  let path = "/v1/api/danh-sach";
+  let path = "/v1/api/danh-sach/phim-moi-cap-nhat";
 
   if (params.q) {
     path = "/v1/api/tim-kiem";
+  } else if (params.genre) {
+    path = `/v1/api/the-loai/${params.genre}`;
+  } else if (params.country) {
+    path = `/v1/api/quoc-gia/${params.country}`;
+  } else if (params.year) {
+    path = `/v1/api/nam/${params.year}`;
   } else if (params.kind === "single") {
     path = "/v1/api/danh-sach/phim-le";
   } else if (params.kind === "series") {
@@ -254,17 +265,15 @@ async function discoverKkphim(params: {
     path = "/v1/api/danh-sach/tv-shows";
   } else if (params.kind === "cinema") {
     path = "/v1/api/danh-sach/phim-chieu-rap";
-  } else {
-    path = "/v1/api/danh-sach/phim-moi-cap-nhat";
   }
 
   const searchParams = new URLSearchParams();
   searchParams.set("page", String(params.page));
   searchParams.set("limit", String(params.limit));
   if (params.q) searchParams.set("keyword", params.q);
-  if (params.genre) searchParams.set("category", params.genre);
-  if (params.country) searchParams.set("country", params.country);
-  if (params.year) searchParams.set("year", params.year);
+  if (params.genre && !path.includes("/the-loai/")) searchParams.set("category", params.genre);
+  if (params.country && !path.includes("/quoc-gia/")) searchParams.set("country", params.country);
+  if (params.year && !path.includes("/nam/")) searchParams.set("year", params.year);
 
   // Sorting
   if (params.sort === "year" || params.sort === "year_desc") {
@@ -285,14 +294,19 @@ async function discoverKkphim(params: {
 
   items = sortMovies(items, params.sort || (params.year ? "year" : "modified"));
 
-  const pagination = data.data?.pagination || {};
+  const pagination = data.data?.params?.pagination || data.params?.pagination || data.data?.pagination || data.pagination || {};
+  const totalItems = parseInt(pagination.totalItems || pagination.total_items || items.length, 10);
+  const itemsPerPage = parseInt(pagination.totalItemsPerPage || pagination.items_per_page || params.limit, 10);
+  const currentPage = parseInt(pagination.currentPage || pagination.current_page || params.page, 10);
+  const totalPages = parseInt(pagination.totalPages || pagination.total_page || Math.ceil(totalItems / itemsPerPage) || 1, 10);
+
   return {
     items,
     pagination: {
-      currentPage: parseInt(pagination.currentPage || String(params.page)),
-      totalPages: pagination.totalPages || Math.ceil(items.length / params.limit) || 1,
-      totalItems: pagination.totalItems || items.length,
-      itemsPerPage: params.limit,
+      currentPage,
+      totalPages,
+      totalItems,
+      itemsPerPage,
     },
   };
 }
@@ -311,7 +325,7 @@ async function discoverOphim(params: {
   limit: number;
 }) {
   const baseUrl = "https://ophim1.com";
-  let path = "/v1/api/danh-sach";
+  let path = "/v1/api/danh-sach/phim-moi-cap-nhat";
   const searchParams = new URLSearchParams();
 
   if (params.q) {
@@ -348,20 +362,25 @@ async function discoverOphim(params: {
   let items = (data.data?.items || []).map((m: any) => normalizeMovie(m, "ophim", cdnBase));
   items = sortMovies(items, params.sort || (params.year ? "year" : "modified"));
 
-  const pagination = data.data?.pagination || {};
+  const pagination = data.data?.params?.pagination || data.params?.pagination || data.data?.pagination || data.pagination || {};
+  const totalItems = parseInt(pagination.totalItems || pagination.total_items || items.length, 10);
+  const itemsPerPage = parseInt(pagination.totalItemsPerPage || pagination.items_per_page || params.limit, 10);
+  const currentPage = parseInt(pagination.currentPage || pagination.current_page || params.page, 10);
+  const totalPages = parseInt(pagination.totalPages || pagination.total_page || Math.ceil(totalItems / itemsPerPage) || 1, 10);
+
   return {
     items,
     pagination: {
-      currentPage: parseInt(pagination.currentPage || String(params.page)),
-      totalPages: pagination.totalPages || Math.ceil(items.length / params.limit) || 1,
-      totalItems: pagination.totalItems || items.length,
-      itemsPerPage: params.limit,
+      currentPage,
+      totalPages,
+      totalItems,
+      itemsPerPage,
     },
   };
 }
 
 // ============================================
-// NguonC - Simple API
+// NguonC - Dedicated Path Endpoints
 // ============================================
 async function discoverNguonc(params: {
   kind?: string;
@@ -377,6 +396,12 @@ async function discoverNguonc(params: {
 
   if (params.q) {
     path = "/api/films/search";
+  } else if (params.genre) {
+    path = `/api/films/the-loai/${params.genre}`;
+  } else if (params.country) {
+    path = `/api/films/quoc-gia/${params.country}`;
+  } else if (params.year) {
+    path = `/api/films/nam-phat-hanh/${params.year}`;
   } else if (params.kind === "single") {
     path = "/api/films/danh-sach/phim-le";
   } else if (params.kind === "series") {
@@ -398,20 +423,25 @@ async function discoverNguonc(params: {
 
   let items = (data.items || []).map((m: any) => normalizeMovie(m, "nguonc"));
 
-  if (params.year) {
+  if (params.year && !path.includes("/nam-phat-hanh/")) {
     items = items.filter((m: any) => String(m.year) === params.year);
   }
 
   items = sortMovies(items, params.sort || (params.year ? "year" : "modified"));
 
-  const pagination = data.pagination || {};
+  const pagination = data.paginate || data.pagination || {};
+  const totalItems = parseInt(pagination.total_items || pagination.totalItems || items.length, 10);
+  const itemsPerPage = parseInt(pagination.items_per_page || pagination.totalItemsPerPage || 10, 10);
+  const currentPage = parseInt(pagination.current_page || pagination.currentPage || params.page, 10);
+  const totalPages = parseInt(pagination.total_page || pagination.totalPages || Math.ceil(totalItems / itemsPerPage) || 1, 10);
+
   return {
     items,
     pagination: {
-      currentPage: parseInt(pagination.currentPage || String(params.page)),
-      totalPages: pagination.totalPages || 1,
-      totalItems: pagination.totalItems || items.length,
-      itemsPerPage: 10,
+      currentPage,
+      totalPages,
+      totalItems,
+      itemsPerPage,
     },
   };
 }
