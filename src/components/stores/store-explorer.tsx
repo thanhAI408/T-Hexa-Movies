@@ -8,31 +8,15 @@ import {
   Layers, RefreshCw, ArrowUpDown
 } from "lucide-react";
 import type { StoreConfig } from "@/lib/stores/config";
-
-interface TaxonomyItem {
-  id?: string;
-  name: string;
-  slug: string;
-}
-
-interface ExploreData {
-  provider: string;
-  store: string;
-  categories: { id: string; name: string; slug: string; emoji: string }[];
-  genres: TaxonomyItem[];
-  genresCount: number;
-  countries: TaxonomyItem[];
-  countriesCount: number;
-  years: number[];
-  yearsCount: number;
-  filters: {
-    hasGenres: boolean;
-    hasCountries: boolean;
-    hasYears: boolean;
-    hasQuality: boolean;
-    hasSort: boolean;
-  };
-}
+import {
+  getCachedExplore,
+  setCachedExplore,
+  getCachedDiscover,
+  setCachedDiscover,
+  setLastStoreFilter,
+  prefetchAllStores,
+  type ExploreData,
+} from "@/lib/stores/cache";
 
 interface StoreExplorerProps {
   store: StoreConfig;
@@ -127,11 +111,33 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
   const sort = searchParams.get("sort") || "modified";
   const q = searchParams.get("q") || "";
 
-  const [exploreData, setExploreData] = useState<ExploreData | null>(null);
-  const [loadingExplore, setLoadingExplore] = useState(true);
-  const [movies, setMovies] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 });
-  const [loadingMovies, setLoadingMovies] = useState(false);
+  // 1. Explore taxonomy with Instant In-Memory Cache
+  const initialExplore = useMemo(() => getCachedExplore(store.slug), [store.slug]);
+  const [exploreData, setExploreData] = useState<ExploreData | null>(initialExplore);
+  const [loadingExplore, setLoadingExplore] = useState(!initialExplore);
+
+  // 2. Discover query string calculation
+  const currentQueryString = useMemo(() => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: "24",
+      sort: sort,
+    });
+    if (kind && kind !== "latest") params.set("kind", kind);
+    if (genre) params.set("genre", genre);
+    if (country) params.set("country", country);
+    if (year) params.set("year", year);
+    if (q) params.set("q", q);
+    return params.toString();
+  }, [page, kind, genre, country, year, sort, q]);
+
+  // 3. Movies with Instant In-Memory Cache
+  const initialDiscover = useMemo(() => getCachedDiscover(store.slug, currentQueryString), [store.slug, currentQueryString]);
+  const [movies, setMovies] = useState<any[]>(initialDiscover?.items || []);
+  const [pagination, setPagination] = useState(
+    initialDiscover?.pagination || { currentPage: page, totalPages: 1, totalItems: 0, itemsPerPage: 24 }
+  );
+  const [loadingMovies, setLoadingMovies] = useState(!initialDiscover);
 
   // Modal / Drawer state for full taxonomy
   const [activeModal, setActiveModal] = useState<"genre" | "country" | "year" | "all" | null>(null);
@@ -158,54 +164,86 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     setLocalQuery(q);
   }, [q]);
 
-  // Fetch explore taxonomy
+  // Fetch explore taxonomy (with cache write & background revalidation)
   useEffect(() => {
+    // Remember last active filter state for this store so returning is instant
+    setLastStoreFilter(store.slug, searchParams.toString());
+
+    // Prefetch all other 3 stores in background for instant zero-delay switching!
+    prefetchAllStores(store.slug);
+
+    const cached = getCachedExplore(store.slug);
+    if (cached) {
+      setExploreData(cached);
+      setLoadingExplore(false);
+    } else {
+      setLoadingExplore(true);
+    }
+
+    let isMounted = true;
     async function fetchExplore() {
       try {
         const response = await fetch(`/api/stores/${store.slug}/explore`);
         if (response.ok) {
           const data = await response.json();
-          setExploreData(data);
+          if (isMounted) {
+            setExploreData(data);
+            setCachedExplore(store.slug, data);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch explore:", error);
       } finally {
-        setLoadingExplore(false);
+        if (isMounted) {
+          setLoadingExplore(false);
+        }
       }
     }
 
     fetchExplore();
-  }, [store.slug]);
 
-  // Fetch movies with ALL active filters
+    return () => {
+      isMounted = false;
+    };
+  }, [store.slug, searchParams]);
+
+  // Fetch movies with Instant Cache & Background Revalidation
   const fetchMovies = useCallback(async () => {
-    setLoadingMovies(true);
+    const cached = getCachedDiscover(store.slug, currentQueryString);
+    if (cached) {
+      setMovies(cached.items);
+      setPagination(cached.pagination);
+      setLoadingMovies(false);
+    } else {
+      setLoadingMovies(true);
+    }
+
+    let isMounted = true;
     try {
-      const params = new URLSearchParams({
-        page: String(page),
-        limit: "24",
-        sort: sort,
-      });
-
-      if (kind && kind !== "latest") params.set("kind", kind);
-      if (genre) params.set("genre", genre);
-      if (country) params.set("country", country);
-      if (year) params.set("year", year);
-      if (q) params.set("q", q);
-
-      const response = await fetch(`/api/stores/${store.slug}/discover?${params.toString()}`);
-
+      const response = await fetch(`/api/stores/${store.slug}/discover?${currentQueryString}`);
       if (response.ok) {
         const data = await response.json();
-        setMovies(data.items || []);
-        setPagination(data.pagination || { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: 24 });
+        const items = data.items || [];
+        const pag = data.pagination || { currentPage: page, totalPages: 1, totalItems: items.length, itemsPerPage: 24 };
+        
+        if (isMounted) {
+          setMovies(items);
+          setPagination(pag);
+          setCachedDiscover(store.slug, currentQueryString, { items, pagination: pag });
+        }
       }
     } catch (error) {
       console.error("Failed to fetch movies:", error);
     } finally {
-      setLoadingMovies(false);
+      if (isMounted) {
+        setLoadingMovies(false);
+      }
     }
-  }, [store.slug, page, kind, genre, country, year, sort, q]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [store.slug, currentQueryString, page]);
 
   useEffect(() => {
     fetchMovies();
@@ -342,7 +380,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     );
   }, [exploreData, modalSearch]);
 
-  if (loadingExplore) {
+  if (loadingExplore && !exploreData) {
     return (
       <div className="flex flex-col items-center justify-center py-28 gap-4">
         <div 
@@ -766,7 +804,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
             {activeTitle}
           </h2>
           <p className="text-xs sm:text-sm font-medium mt-0.5" style={{ color: store.theme.textMuted }}>
-            {loadingMovies ? (
+            {loadingMovies && movies.length === 0 ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 size={13} className="animate-spin" />
                 Đang tìm phim phù hợp...
@@ -788,7 +826,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
       </div>
 
       {/* 5. MOVIE GRID / SKELETON */}
-      {loadingMovies ? (
+      {loadingMovies && movies.length === 0 ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {[...Array(12)].map((_, i) => (
             <div key={i} className="space-y-2.5">

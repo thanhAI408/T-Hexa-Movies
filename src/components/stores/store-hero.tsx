@@ -5,6 +5,7 @@ import { Play, ChevronRight, Sparkles, Heart, Calendar, Clock, Film } from "luci
 import type { StoreConfig } from "@/lib/stores/config";
 import type { ProviderMovieInput } from "@/types/catalog";
 import { useState, useEffect, useRef, useMemo } from "react";
+import { getCachedHero, setCachedHero } from "@/lib/stores/cache";
 
 interface StoreHeroProps {
   store: StoreConfig;
@@ -23,29 +24,50 @@ function cleanPosterUrl(url: any): string | null {
 }
 
 export function StoreHero({ store }: StoreHeroProps) {
-  const [featuredMovie, setFeaturedMovie] = useState<ProviderMovieInput | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
+  // Initialize instantly from in-memory cache if available
+  const initialCached = useMemo(() => getCachedHero(store.slug), [store.slug]);
+  const [featuredMovie, setFeaturedMovie] = useState<ProviderMovieInput | null>(initialCached);
+  const [loading, setLoading] = useState(!initialCached);
+  const [isVisible, setIsVisible] = useState(Boolean(initialCached));
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const cached = getCachedHero(store.slug);
+    if (cached) {
+      setFeaturedMovie(cached);
+      setLoading(false);
+      setIsVisible(true);
+    } else {
+      setLoading(true);
+      setIsVisible(false);
+    }
+
+    let isMounted = true;
     async function fetchFeatured() {
       try {
         const response = await fetch(`/api/stores/${store.slug}/movies?page=1&limit=1&sort=updated`);
+        if (!response.ok) return;
         const data = await response.json();
-        if (data.items && data.items.length > 0) {
+        if (data.items && data.items.length > 0 && isMounted) {
           setFeaturedMovie(data.items[0]);
+          setCachedHero(store.slug, data.items[0]);
         }
       } catch (error) {
         console.error("Failed to fetch featured movie:", error);
       } finally {
-        setLoading(false);
-        setTimeout(() => setIsVisible(true), 50);
+        if (isMounted) {
+          setLoading(false);
+          setTimeout(() => setIsVisible(true), 30);
+        }
       }
     }
 
     fetchFeatured();
+
+    return () => {
+      isMounted = false;
+    };
   }, [store.slug]);
 
   // Track mouse position for parallax
@@ -78,8 +100,8 @@ export function StoreHero({ store }: StoreHeroProps) {
     return cleanPosterUrl(featuredMovie.backdropUrl) || cleanPosterUrl(featuredMovie.posterUrl);
   }, [featuredMovie]);
 
-  // Loading state
-  if (loading) {
+  // Loading state (only shown if not cached at all)
+  if (loading && !featuredMovie) {
     return (
       <section className="relative overflow-hidden" style={{ background: store.theme.background }}>
         <div className="page-shell relative flex min-h-[420px] items-center py-16">

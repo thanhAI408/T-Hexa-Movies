@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Sun, Sunrise, Sunset, Moon, ChevronDown, Check, Sparkles } from "lucide-react";
 import { STORE_LIST, type StoreConfig } from "@/lib/stores/config";
+import { prefetchStore, getLastStoreFilter } from "@/lib/stores/cache";
 
 interface StoreHeaderProps {
   store: StoreConfig;
@@ -53,11 +54,11 @@ export function StoreHeader({ store }: StoreHeaderProps) {
         <div className="flex items-center gap-3.5">
           <Link
             href="/stores"
-            className="group flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold tracking-wide transition-all duration-300 hover:scale-105 active:scale-95"
+            className="group flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold tracking-wide border transition-all duration-300 hover:scale-105 active:scale-95"
             style={{
               color: store.theme.text,
               backgroundColor: store.theme.surface,
-              border: `1px solid ${store.theme.border}`,
+              borderColor: store.theme.border,
               boxShadow: store.theme.shadowSm,
             }}
           >
@@ -140,10 +141,14 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                 <div className="space-y-1">
                   {STORE_LIST.map((item) => {
                     const isCurrent = item.slug === store.slug;
+                    const lastFilter = getLastStoreFilter(item.slug);
+                    const targetUrl = `/stores/${item.slug}${lastFilter ? `?${lastFilter}` : ""}`;
+
                     return (
                       <Link
                         key={item.slug}
-                        href={`/stores/${item.slug}`}
+                        href={targetUrl}
+                        onMouseEnter={() => prefetchStore(item.slug)}
                         onClick={() => setShowThemeMenu(false)}
                         className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition-all hover:scale-102"
                         style={{
