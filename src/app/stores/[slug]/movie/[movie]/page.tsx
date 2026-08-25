@@ -16,6 +16,18 @@ interface Props {
   params: Promise<{ slug: string; movie: string }>;
 }
 
+function cleanPosterUrl(url: any): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const cleaned = trimmed.replace(/^\/+/, "");
+  if (cleaned.startsWith("uploads/movies/")) {
+    return `https://phimimg.com/${cleaned}`;
+  }
+  return `https://phimimg.com/uploads/movies/${cleaned}`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug, movie } = await params;
   const store = STORES[slug];
@@ -24,35 +36,43 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const detail = await getMovieDetail(slug, movie);
   if (!detail) return { title: "Không tìm thấy phim" };
 
+  const poster = cleanPosterUrl(detail.movie.posterUrl);
+
   return {
     title: `${detail.movie.title} | ${store.name}`,
     description: detail.movie.description || `${detail.movie.title} - Xem phim chất lượng cao`,
     openGraph: {
       title: detail.movie.title,
       description: detail.movie.description || undefined,
-      images: detail.movie.posterUrl ? [detail.movie.posterUrl] : [],
+      images: poster ? [poster] : [],
     },
   };
 }
 
 function MovieCard({ movie, store }: { movie: ProviderMovieInput; store: typeof STORES[keyof typeof STORES] }) {
+  const poster = cleanPosterUrl(movie.posterUrl);
+
   return (
     <Link
       href={`/stores/${store.slug}/movie/${movie.providerSlug}`}
       className="group block transition-transform duration-300 hover:scale-105"
     >
-      <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
-        {movie.posterUrl ? (
+      <div 
+        className="relative aspect-[2/3] overflow-hidden rounded-xl border" 
+        style={{ borderColor: store.theme.border, background: store.theme.surface }}
+      >
+        {poster ? (
           <Image
-            src={movie.posterUrl}
+            src={poster}
             alt={movie.title}
             fill
+            unoptimized
             className="object-cover transition-transform duration-500 group-hover:scale-110"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 200px"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center" style={{ background: store.theme.surface }}>
-            <Film size={32} style={{ color: store.theme.muted }} />
+            <Film size={32} style={{ color: store.theme.textMuted }} />
           </div>
         )}
         {movie.quality && (
@@ -71,7 +91,7 @@ function MovieCard({ movie, store }: { movie: ProviderMovieInput; store: typeof 
         {movie.title}
       </h3>
       {movie.year && (
-        <p className="mt-1 text-xs" style={{ color: store.theme.muted }}>
+        <p className="mt-1 text-xs" style={{ color: store.theme.textMuted }}>
           {movie.year}
         </p>
       )}
@@ -94,11 +114,11 @@ export default async function MovieDetailPage({ params }: Props) {
       <StoreProvider store={store}>
         <StoreHeader store={store} />
         <div className="page-shell flex min-h-[60vh] flex-col items-center justify-center py-20">
-          <Film size={64} className="mb-4" style={{ color: store.theme.muted }} />
+          <Film size={64} className="mb-4" style={{ color: store.theme.textMuted }} />
           <h1 className="text-2xl font-bold" style={{ color: store.theme.text }}>
             Không tìm thấy phim
           </h1>
-          <p className="mt-2" style={{ color: store.theme.muted }}>
+          <p className="mt-2" style={{ color: store.theme.textMuted }}>
             Phim này có thể đã bị xóa hoặc không tồn tại
           </p>
           <Link
@@ -115,6 +135,8 @@ export default async function MovieDetailPage({ params }: Props) {
   }
 
   const { movie: movieInfo, episodes } = movieDetail;
+  const poster = cleanPosterUrl(movieInfo.posterUrl);
+  const backdrop = cleanPosterUrl(movieInfo.backdropUrl) || poster;
 
   // Deduplicate episodes by episodeKey (some sources return duplicates)
   const uniqueEpisodes = episodes.reduce((acc, ep) => {
@@ -135,11 +157,7 @@ export default async function MovieDetailPage({ params }: Props) {
         <div
           className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 scale-105"
           style={{
-            backgroundImage: movieInfo.backdropUrl
-              ? `url(${movieInfo.backdropUrl})`
-              : movieInfo.posterUrl
-                ? `url(${movieInfo.posterUrl})`
-                : "none",
+            backgroundImage: backdrop ? `url(${backdrop})` : "none",
             filter: "brightness(0.7) blur(2px)",
           }}
         >
@@ -196,11 +214,12 @@ export default async function MovieDetailPage({ params }: Props) {
                   background: store.theme.surface,
                 }}
               >
-                {movieInfo.posterUrl ? (
+                {poster ? (
                   <Image
-                    src={movieInfo.posterUrl}
+                    src={poster}
                     alt={movieInfo.title}
                     fill
+                    unoptimized
                     className="object-cover"
                     priority
                     sizes="(max-width: 768px) 192px, 288px"

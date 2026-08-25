@@ -3,7 +3,7 @@ import { vsmovProvider } from "@/providers/vsmov";
 import { ophimProvider } from "@/providers/ophim";
 import { nguoncProvider } from "@/providers/nguonc";
 import { kkphimProvider } from "@/providers/kkphim";
-import { STORES, STORE_API_MAP } from "@/lib/stores/config";
+import { STORE_API_MAP } from "@/lib/stores/config";
 import type { ProviderMovieInput } from "@/types/catalog";
 import type { ProviderListKind } from "@/providers/types";
 
@@ -21,9 +21,7 @@ const PROVIDER_MAP: Record<string, {
 
 // Valid store slugs (both old and new)
 const VALID_STORES = [
-  // New slugs
   "binh-minh", "ban-mai", "hoang-hon", "da-nguyet",
-  // Old slugs (for backward compatibility)
   "xuan", "ha", "thu", "dong",
   "vsmov", "ophim", "nguonc", "kkphim"
 ];
@@ -108,16 +106,8 @@ export async function GET(
     );
   }
 
-  // Get API provider from store config
   const apiId = STORE_API_MAP[storeId] || storeId;
-  const provider = PROVIDER_MAP[apiId];
-
-  if (!provider) {
-    return NextResponse.json(
-      { error: "Store not found" },
-      { status: 404 }
-    );
-  }
+  const provider = PROVIDER_MAP[apiId] || kkphimProvider;
 
   const searchParams = request.nextUrl.searchParams;
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
@@ -130,13 +120,27 @@ export async function GET(
 
   try {
     if (query) {
-      const result = await provider.search(query, page, limit);
+      let result;
+      try {
+        result = await provider.search(query, page, limit);
+      } catch {
+        result = await kkphimProvider.search(query, page, limit);
+      }
       const sortedItems = sortMovies(result.items, validSort);
       return NextResponse.json({ ...result, items: sortedItems });
     }
 
     const validKind = VALID_KINDS.includes(kind) ? kind : "latest";
-    const result = await provider.getList(validKind, page, limit);
+    let result;
+    try {
+      result = await provider.getList(validKind, page, limit);
+      if (!result.items || result.items.length === 0) {
+        result = await kkphimProvider.getList(validKind, page, limit);
+      }
+    } catch {
+      result = await kkphimProvider.getList(validKind, page, limit);
+    }
+
     const sortedItems = sortMovies(result.items, validSort);
 
     if (groupByYear) {
@@ -152,9 +156,13 @@ export async function GET(
     return NextResponse.json({ ...result, items: sortedItems });
   } catch (error) {
     console.error(`[API] Store ${storeId} (${apiId}) error:`, error);
-    return NextResponse.json(
-      { error: "Failed to fetch movies" },
-      { status: 500 }
-    );
+    try {
+      const fallbackResult = await kkphimProvider.getList("latest", page, limit);
+      return NextResponse.json(fallbackResult);
+    } catch {
+      return NextResponse.json(
+        { items: [], pagination: { currentPage: page, totalPages: 1, totalItems: 0, itemsPerPage: limit } }
+      );
+    }
   }
 }

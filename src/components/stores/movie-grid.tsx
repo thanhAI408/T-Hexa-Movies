@@ -25,8 +25,19 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "updated", label: "✨ Mới cập nhật" },
   { value: "year_desc", label: "📅 Năm mới nhất" },
   { value: "year_asc", label: "📅 Năm cũ nhất" },
-  { value: "title", label: "🔤 A-Z" },
 ];
+
+function cleanPosterUrl(url: any): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const cleaned = trimmed.replace(/^\/+/, "");
+  if (cleaned.startsWith("uploads/movies/")) {
+    return `https://phimimg.com/${cleaned}`;
+  }
+  return `https://phimimg.com/uploads/movies/${cleaned}`;
+}
 
 function MovieGridContent({ store }: MovieGridProps) {
   const router = useRouter();
@@ -385,21 +396,31 @@ function MovieGridContent({ store }: MovieGridProps) {
                   }}
                 >
                   {/* Poster Image */}
-                  {movie.posterUrl ? (
+                  {cleanPosterUrl(movie.posterUrl) ? (
                     <img
-                      src={movie.posterUrl}
+                      src={cleanPosterUrl(movie.posterUrl)!}
                       alt={movie.title}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                       loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                        const parent = (e.currentTarget as HTMLImageElement).parentElement;
+                        if (parent) {
+                          const fallback = parent.querySelector('.movie-fallback-icon');
+                          if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                        }
+                      }}
                     />
-                  ) : (
-                    <div
-                      className="flex h-full w-full items-center justify-center"
-                      style={{ background: store.theme.surface }}
-                    >
-                      <Film size={48} style={{ color: store.theme.textMuted }} />
-                    </div>
-                  )}
+                  ) : null}
+                  <div
+                    className="movie-fallback-icon flex h-full w-full items-center justify-center"
+                    style={{ 
+                      background: store.theme.surface,
+                      display: cleanPosterUrl(movie.posterUrl) ? 'none' : 'flex'
+                    }}
+                  >
+                    <Film size={48} style={{ color: store.theme.textMuted }} />
+                  </div>
 
                   {/* Hover Overlay */}
                   <div

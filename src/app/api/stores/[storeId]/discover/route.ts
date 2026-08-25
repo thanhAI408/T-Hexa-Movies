@@ -8,102 +8,80 @@ const VALID_STORES = [
 ];
 
 // ============================================
-// NORMALIZATION
+// IMAGE URL RESOLVER
 // ============================================
-function normalizeMovie(movie: any, provider: string) {
-  if (provider === "vsmov") {
-    const rawYear = movie.year ? parseInt(String(movie.year), 10) : null;
-    return {
-      providerSlug: movie.slug,
-      providerMovieId: movie._id,
-      title: movie.name,
-      originalTitle: movie.origin_name,
-      posterUrl: movie.poster_url || movie.thumb_url,
-      backdropUrl: movie.thumb_url || movie.poster_url,
-      year: typeof rawYear === "number" && !isNaN(rawYear) ? rawYear : null,
-      quality: movie.quality,
-      type: movie.type === "tvshows" || movie.type === "tvshow"
-        ? "tvshow"
-        : movie.type === "hoathinh" || movie.type === "animation"
-        ? "animation"
-        : movie.type === "series"
-        ? "series"
-        : "single",
-      rating: movie.tmdb?.vote_average ? parseFloat(movie.tmdb.vote_average) : null,
-      providerUpdatedAt: movie.modified?.time || movie.updatedAt || null,
-    };
+export function resolveImageUrl(url: any, provider: string, cdnBase?: string): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+
+  // If already absolute http/https
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
   }
 
-  if (provider === "ophim") {
-    const rawYear = movie.year ? parseInt(String(movie.year), 10) : null;
-    return {
-      providerSlug: movie.slug,
-      providerMovieId: movie._id,
-      title: movie.name,
-      originalTitle: movie.origin_name,
-      posterUrl: movie.poster_url || movie.thumb_url,
-      backdropUrl: movie.thumb_url || movie.poster_url,
-      year: typeof rawYear === "number" && !isNaN(rawYear) ? rawYear : null,
-      quality: movie.quality,
-      type: movie.type === "series"
-        ? "series"
-        : movie.type === "hoathinh" || movie.type === "animation"
-        ? "animation"
-        : movie.type === "tvshows" || movie.type === "tvshow"
-        ? "tvshow"
-        : "single",
-      rating: movie.tmdb?.vote_average ? parseFloat(movie.tmdb.vote_average) : null,
-      providerUpdatedAt: movie.modified?.time || movie.updatedAt || null,
-    };
-  }
+  const cleaned = trimmed.replace(/^\/+/, "");
 
-  if (provider === "nguonc") {
-    const rawYear = movie.year ? parseInt(String(movie.year), 10) : null;
-    return {
-      providerSlug: movie.slug,
-      providerMovieId: movie.id,
-      title: movie.name,
-      originalTitle: movie.origin_name,
-      posterUrl: movie.poster_url || movie.thumb_url,
-      backdropUrl: movie.thumb_url || movie.poster_url,
-      year: typeof rawYear === "number" && !isNaN(rawYear) ? rawYear : null,
-      quality: movie.quality,
-      type: movie.type === "series"
-        ? "series"
-        : movie.type === "hoathinh" || movie.type === "animation"
-        ? "animation"
-        : movie.type === "tvshows" || movie.type === "tvshow"
-        ? "tvshow"
-        : "single",
-      rating: null,
-      providerUpdatedAt: movie.updatedAt || movie.modified || null,
-    };
+  if (cdnBase) {
+    const base = cdnBase.endsWith("/") ? cdnBase : `${cdnBase}/`;
+    return `${base}${cleaned}`;
   }
 
   if (provider === "kkphim") {
-    const rawYear = movie.year ? parseInt(String(movie.year), 10) : null;
-    return {
-      providerSlug: movie.slug,
-      providerMovieId: movie._id,
-      title: movie.name,
-      originalTitle: movie.origin_name,
-      posterUrl: movie.poster_url || movie.thumb_url,
-      backdropUrl: movie.thumb_url || movie.poster_url,
-      year: typeof rawYear === "number" && !isNaN(rawYear) ? rawYear : null,
-      quality: movie.quality,
-      type: movie.type === "series"
-        ? "series"
-        : movie.type === "hoathinh" || movie.type === "animation"
-        ? "animation"
-        : movie.type === "tvshows" || movie.type === "tvshow"
-        ? "tvshow"
-        : "single",
-      rating: movie.tmdb?.vote_average ? parseFloat(movie.tmdb.vote_average) : null,
-      providerUpdatedAt: movie.modified?.time || movie.updatedAt || null,
-    };
+    return cleaned.startsWith("uploads/movies/")
+      ? `https://phimimg.com/${cleaned}`
+      : `https://phimimg.com/uploads/movies/${cleaned}`;
   }
 
-  return movie;
+  if (provider === "ophim") {
+    return cleaned.startsWith("uploads/movies/")
+      ? `https://img.ophimimg.com/${cleaned}`
+      : `https://img.ophimimg.com/uploads/movies/${cleaned}`;
+  }
+
+  if (provider === "vsmov") {
+    return `https://vsmov.com/storage/images/${cleaned}`;
+  }
+
+  if (provider === "nguonc") {
+    return `https://phim.nguonc.com/public/images/Post/${cleaned}`;
+  }
+
+  return `https://phimimg.com/uploads/movies/${cleaned}`;
+}
+
+// ============================================
+// NORMALIZATION
+// ============================================
+function normalizeMovie(movie: any, provider: string, cdnBase?: string) {
+  const rawYear = movie.year ? parseInt(String(movie.year), 10) : null;
+  const year = typeof rawYear === "number" && !isNaN(rawYear) ? rawYear : null;
+  
+  const poster = resolveImageUrl(movie.poster_url || movie.thumb_url || movie.posterUrl, provider, cdnBase);
+  const backdrop = resolveImageUrl(movie.thumb_url || movie.poster_url || movie.backdropUrl, provider, cdnBase);
+
+  const rawType = movie.type || "";
+  const type = rawType === "tvshows" || rawType === "tvshow"
+    ? "tvshow"
+    : rawType === "hoathinh" || rawType === "animation"
+    ? "animation"
+    : rawType === "series"
+    ? "series"
+    : "single";
+
+  return {
+    providerSlug: movie.slug || movie.providerSlug,
+    providerMovieId: movie._id || movie.id || movie.providerMovieId,
+    title: movie.name || movie.title,
+    originalTitle: movie.origin_name || movie.originalTitle,
+    posterUrl: poster,
+    backdropUrl: backdrop,
+    year,
+    quality: movie.quality || null,
+    type,
+    rating: movie.tmdb?.vote_average ? parseFloat(movie.tmdb.vote_average) : (movie.rating || null),
+    providerUpdatedAt: movie.modified?.time || movie.updatedAt || movie.providerUpdatedAt || null,
+  };
 }
 
 // ============================================
@@ -221,13 +199,12 @@ async function discoverVsmov(params: {
 
   const data = await fetchJson(url.toString());
   if (!data) {
-    // Fallback to KKPhim if VSMOV fails
     return discoverKkphim(params);
   }
 
-  let items = (data.items || []).map((m: any) => normalizeMovie(m, "vsmov"));
+  const cdnBase = data.pathImage || data.APP_DOMAIN_CDN_IMAGE;
+  let items = (data.items || []).map((m: any) => normalizeMovie(m, "vsmov", cdnBase));
 
-  // Client-side multi-filter refinement if multiple filters are set
   if (params.kind && params.kind !== "latest") {
     items = items.filter((m: any) => m.type === params.kind);
   }
@@ -303,9 +280,9 @@ async function discoverKkphim(params: {
     return { items: [], pagination: emptyPagination(params.page, params.limit) };
   }
 
-  let items = (data.data?.items || []).map((m: any) => normalizeMovie(m, "kkphim"));
+  const cdnBase = data.data?.APP_DOMAIN_CDN_IMAGE || "https://phimimg.com";
+  let items = (data.data?.items || []).map((m: any) => normalizeMovie(m, "kkphim", cdnBase));
 
-  // Ensure sorting is applied properly
   items = sortMovies(items, params.sort || (params.year ? "year" : "modified"));
 
   const pagination = data.data?.pagination || {};
@@ -367,7 +344,8 @@ async function discoverOphim(params: {
     return discoverKkphim(params);
   }
 
-  let items = (data.data?.items || []).map((m: any) => normalizeMovie(m, "ophim"));
+  const cdnBase = data.data?.APP_DOMAIN_CDN_IMAGE || "https://img.ophimimg.com";
+  let items = (data.data?.items || []).map((m: any) => normalizeMovie(m, "ophim", cdnBase));
   items = sortMovies(items, params.sort || (params.year ? "year" : "modified"));
 
   const pagination = data.data?.pagination || {};
@@ -495,7 +473,6 @@ export async function GET(
     return NextResponse.json(result);
   } catch (error) {
     console.error(`[API] Discover ${storeId} error:`, error);
-    // Fallback gracefully
     const fallback = await discoverKkphim({ kind, genre, country, year, sort, page, limit, q });
     return NextResponse.json(fallback);
   }

@@ -46,6 +46,74 @@ const SORT_OPTIONS = [
   { value: "title", label: "Tên phim A-Z", emoji: "🔤" },
 ];
 
+function cleanPosterUrl(url: any): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const cleaned = trimmed.replace(/^\/+/, "");
+  if (cleaned.startsWith("uploads/movies/")) {
+    return `https://phimimg.com/${cleaned}`;
+  }
+  return `https://phimimg.com/uploads/movies/${cleaned}`;
+}
+
+function MovieCardPoster({
+  url,
+  title,
+  theme,
+}: {
+  url: string | null | undefined;
+  title: string;
+  theme: StoreConfig["theme"];
+}) {
+  const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const validUrl = useMemo(() => cleanPosterUrl(url), [url]);
+
+  if (!validUrl || hasError) {
+    return (
+      <div
+        className="flex h-full w-full flex-col items-center justify-center p-3 text-center transition-all"
+        style={{
+          background: `radial-gradient(circle at 50% 40%, ${theme.primary}25 0%, ${theme.surface} 100%)`,
+        }}
+      >
+        <div
+          className="flex h-12 w-12 items-center justify-center rounded-2xl mb-2 shadow-inner"
+          style={{ background: `${theme.primary}30`, color: theme.primary }}
+        >
+          <Film size={26} />
+        </div>
+        <span
+          className="line-clamp-2 text-xs font-semibold tracking-tight"
+          style={{ color: theme.text }}
+        >
+          {title}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {!isLoaded && (
+        <div className="absolute inset-0 skeleton" />
+      )}
+      <img
+        src={validUrl}
+        alt={title || "Movie poster"}
+        className={`h-full w-full object-cover transition-all duration-600 cubic-bezier(0.4, 0, 0.2, 1) group-hover:scale-108 ${
+          isLoaded ? "opacity-100" : "opacity-0"
+        }`}
+        loading="lazy"
+        onLoad={() => setIsLoaded(true)}
+        onError={() => setHasError(true)}
+      />
+    </>
+  );
+}
+
 function StoreExplorerContent({ store }: StoreExplorerProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -748,7 +816,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                     boxShadow: "none",
                   }}
                 >
-                  {/* Poster Image Container */}
+                  {/* Poster Image Container with resilient fallback */}
                   <div
                     className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border transition-all duration-400 group-hover:shadow-2xl"
                     style={{
@@ -756,26 +824,19 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                       background: store.theme.surface,
                     }}
                   >
-                    {poster ? (
-                      <img
-                        src={poster}
-                        alt={title || "Movie"}
-                        className="h-full w-full object-cover transition-transform duration-600 cubic-bezier(0.4, 0, 0.2, 1) group-hover:scale-108"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center" style={{ background: store.theme.surface }}>
-                        <Film size={36} style={{ color: store.theme.textMuted }} />
-                      </div>
-                    )}
+                    <MovieCardPoster
+                      url={poster}
+                      title={title}
+                      theme={store.theme}
+                    />
 
                     {/* Gradient Overlay for Depth */}
                     <div 
-                      className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-85" 
+                      className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-85 pointer-events-none" 
                     />
 
                     {/* Hover Center Play Button */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100 backdrop-blur-[2px]">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100 backdrop-blur-[2px] pointer-events-none">
                       <div
                         className="flex h-13 w-13 items-center justify-center rounded-full transition-transform duration-300 group-hover:scale-110"
                         style={{ 
@@ -793,7 +854,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                     {/* Quality Badge (Top-Left) */}
                     {quality && (
                       <span
-                        className="absolute left-2.5 top-2.5 rounded-lg px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-md shadow-md"
+                        className="absolute left-2.5 top-2.5 rounded-lg px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-md shadow-md pointer-events-none"
                         style={{ background: store.theme.gradientAccent }}
                       >
                         {quality}
@@ -802,14 +863,14 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
 
                     {/* Type Badge (Top-Right) */}
                     {(movie.type === "series" || movie.type === "animation" || movie.type === "tvshow") && (
-                      <span className="absolute right-2.5 top-2.5 rounded-lg bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10">
+                      <span className="absolute right-2.5 top-2.5 rounded-lg bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 pointer-events-none">
                         {movie.type === "series" ? "📺 Bộ" : movie.type === "animation" ? "🎨 Hoạt hình" : "📡 Show"}
                       </span>
                     )}
 
                     {/* Episode label at bottom if available */}
                     {(movie.episode_current || movie.latestEpisodeLabel) && (
-                      <span className="absolute bottom-2 left-2 right-2 truncate rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-medium text-white/90 text-center backdrop-blur-sm border border-white/10">
+                      <span className="absolute bottom-2 left-2 right-2 truncate rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-medium text-white/90 text-center backdrop-blur-sm border border-white/10 pointer-events-none">
                         {movie.episode_current || movie.latestEpisodeLabel}
                       </span>
                     )}
@@ -983,7 +1044,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               </button>
             </div>
 
-            {/* Modal Search Input (if genre, country or all) */}
+            {/* Modal Search Input */}
             {activeModal !== "year" && (
               <div className="p-4 border-b" style={{ borderColor: store.theme.border, background: `${store.theme.background}60` }}>
                 <div className="relative flex items-center">

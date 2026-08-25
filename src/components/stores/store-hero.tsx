@@ -4,10 +4,22 @@ import Link from "next/link";
 import { Play, ChevronRight, Sparkles, Heart, Calendar, Clock, Film } from "lucide-react";
 import type { StoreConfig } from "@/lib/stores/config";
 import type { ProviderMovieInput } from "@/types/catalog";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 interface StoreHeroProps {
   store: StoreConfig;
+}
+
+function cleanPosterUrl(url: any): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const cleaned = trimmed.replace(/^\/+/, "");
+  if (cleaned.startsWith("uploads/movies/")) {
+    return `https://phimimg.com/${cleaned}`;
+  }
+  return `https://phimimg.com/uploads/movies/${cleaned}`;
 }
 
 export function StoreHero({ store }: StoreHeroProps) {
@@ -61,6 +73,11 @@ export function StoreHero({ store }: StoreHeroProps) {
 
   const mood = themeMood[store.slug as keyof typeof themeMood] || themeMood['hoang-hon'];
 
+  const backdrop = useMemo(() => {
+    if (!featuredMovie) return null;
+    return cleanPosterUrl(featuredMovie.backdropUrl) || cleanPosterUrl(featuredMovie.posterUrl);
+  }, [featuredMovie]);
+
   // Loading state
   if (loading) {
     return (
@@ -107,11 +124,7 @@ export function StoreHero({ store }: StoreHeroProps) {
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out"
         style={{
-          backgroundImage: featuredMovie.backdropUrl
-            ? `url(${featuredMovie.backdropUrl})`
-            : featuredMovie.posterUrl
-              ? `url(${featuredMovie.posterUrl})`
-              : "none",
+          backgroundImage: backdrop ? `url(${backdrop})` : "none",
           transform: `scale(1.06) translate(${(mousePos.x - 50) * 0.015}%, ${(mousePos.y - 50) * 0.015}%)`,
           filter: "brightness(0.85)",
         }}
@@ -198,45 +211,34 @@ export function StoreHero({ store }: StoreHeroProps) {
             </p>
           )}
 
-          {/* Meta Tags Bar */}
-          <div className="flex flex-wrap items-center gap-2.5 pt-1 text-xs">
+          {/* Meta Tags */}
+          <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold pt-1">
+            {featuredMovie.year && (
+              <span
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 border backdrop-blur-md shadow-xs"
+                style={{
+                  background: store.theme.surface,
+                  borderColor: store.theme.border,
+                  color: store.theme.text,
+                }}
+              >
+                <Calendar size={13} style={{ color: store.theme.primary }} />
+                <span>{featuredMovie.year}</span>
+              </span>
+            )}
+
             {featuredMovie.quality && (
               <span
-                className="rounded-lg px-3 py-1 font-extrabold uppercase tracking-wider text-white shadow-md"
+                className="rounded-xl px-3 py-1.5 font-bold uppercase tracking-wider text-white shadow-xs"
                 style={{ background: store.theme.gradientAccent }}
               >
                 {featuredMovie.quality}
               </span>
             )}
-            {featuredMovie.year && (
-              <span
-                className="flex items-center gap-1 rounded-lg px-3 py-1 font-semibold border backdrop-blur-md"
-                style={{
-                  background: `${store.theme.surface}90`,
-                  borderColor: store.theme.border,
-                  color: store.theme.text,
-                }}
-              >
-                <Calendar size={13} style={{ color: store.theme.accent }} />
-                {featuredMovie.year}
-              </span>
-            )}
-            {featuredMovie.durationMinutes && (
-              <span
-                className="flex items-center gap-1 rounded-lg px-3 py-1 font-semibold border backdrop-blur-md"
-                style={{
-                  background: `${store.theme.surface}90`,
-                  borderColor: store.theme.border,
-                  color: store.theme.text,
-                }}
-              >
-                <Clock size={13} style={{ color: store.theme.primary }} />
-                {featuredMovie.durationMinutes} phút
-              </span>
-            )}
+
             {featuredMovie.type && (
               <span
-                className="flex items-center gap-1 rounded-lg px-3 py-1 font-semibold border backdrop-blur-md"
+                className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 border backdrop-blur-md shadow-xs"
                 style={{
                   background: store.theme.primaryMuted,
                   borderColor: store.theme.border,
@@ -244,82 +246,55 @@ export function StoreHero({ store }: StoreHeroProps) {
                 }}
               >
                 <Film size={13} />
-                {featuredMovie.type === "single" ? "Phim lẻ" : featuredMovie.type === "series" ? "Phim bộ" : "Hoạt hình"}
+                <span>{featuredMovie.type === "single" ? "Phim lẻ" : featuredMovie.type === "series" ? "Phim bộ" : "Hoạt hình"}</span>
               </span>
             )}
           </div>
 
-          {/* Genres Chips */}
-          {featuredMovie.genres && featuredMovie.genres.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {featuredMovie.genres.slice(0, 4).map((g) => (
-                <span
-                  key={g.id}
-                  className="rounded-full px-3 py-0.5 text-[11px] font-semibold border"
-                  style={{
-                    background: `${store.theme.surface}80`,
-                    borderColor: store.theme.border,
-                    color: store.theme.textSecondary,
-                  }}
-                >
-                  {g.name}
-                </span>
-              ))}
-            </div>
-          )}
-
           {/* Description */}
           {featuredMovie.description && (
             <p
-              className="line-clamp-3 text-xs sm:text-sm leading-relaxed max-w-xl pt-1"
+              className="line-clamp-3 text-sm sm:text-base leading-relaxed max-w-xl"
               style={{ color: store.theme.textSecondary }}
             >
               {featuredMovie.description}
             </p>
           )}
 
-          {/* Action CTAs */}
+          {/* CTAs */}
           <div className="flex flex-wrap items-center gap-3 pt-3">
             <Link
-              href={`/stores/${store.slug}/watch/${featuredMovie.providerSlug}?episode=1`}
-              className="group flex items-center gap-2.5 rounded-2xl px-8 py-3.5 text-sm sm:text-base font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl"
+              href={`/stores/${store.slug}/watch/${featuredMovie.providerSlug}`}
+              className="group flex items-center gap-2.5 rounded-2xl px-7 py-3.5 text-sm sm:text-base font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl"
               style={{
                 background: store.theme.gradientAccent,
                 color: store.theme.textInverse,
-                boxShadow: `0 8px 30px ${store.theme.glow}`,
+                boxShadow: `0 8px 25px ${store.theme.glow}`,
               }}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
-                <Play size={16} fill="currentColor" className="ml-0.5" />
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+                <Play size={13} fill="currentColor" className="ml-0.5" />
               </div>
               <span>Xem ngay</span>
-              <ChevronRight size={18} className="transition-transform group-hover:translate-x-1" />
+              <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
             </Link>
 
             <Link
               href={`/stores/${store.slug}/movie/${featuredMovie.providerSlug}`}
-              className="flex items-center gap-2 rounded-2xl px-6 py-3.5 text-xs sm:text-sm font-semibold border backdrop-blur-xl transition-all duration-300 hover:scale-105 active:scale-95"
+              className="flex items-center gap-2 rounded-2xl border px-6 py-3.5 text-xs sm:text-sm font-semibold transition-all duration-300 hover:scale-105 active:scale-95 backdrop-blur-md"
               style={{
-                background: `${store.theme.surface}95`,
+                background: store.theme.surface,
                 borderColor: store.theme.border,
                 color: store.theme.text,
                 boxShadow: store.theme.shadowSm,
               }}
             >
-              <Sparkles size={16} style={{ color: store.theme.primary }} />
+              <Sparkles size={15} style={{ color: store.theme.primary }} />
               <span>Thông tin chi tiết</span>
             </Link>
           </div>
         </div>
       </div>
-
-      {/* Subtle bottom fade */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
-        style={{
-          background: `linear-gradient(to bottom, transparent 0%, ${store.theme.background} 100%)`,
-        }}
-      />
     </section>
   );
 }
