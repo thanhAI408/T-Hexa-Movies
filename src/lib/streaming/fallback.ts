@@ -263,6 +263,12 @@ export function enrichEpisodesWithFallbacks(
   const tmdbId = sanitizeId(rawTmdb ? String(rawTmdb) : null);
   const imdbId = sanitizeId(rawImdb ? String(rawImdb) : null);
 
+  // If the movie already has healthy original episodes from its provider, DO NOT pollute the episode list with fallbacks
+  const hasHealthyEpisodes = originalEpisodes.length > 0 && originalEpisodes.some((e) => e.embedUrl || e.streamUrl);
+  if (hasHealthyEpisodes && movie.provider !== "vidsrc" && movie.provider !== "vidlink") {
+    return detail;
+  }
+
   // If no external IDs, we can't generate VidSrc/VidLink embeds
   if (!tmdbId && !imdbId) {
     return detail;

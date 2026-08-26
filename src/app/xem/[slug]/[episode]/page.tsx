@@ -393,8 +393,7 @@ export default function WatchPage() {
                 className="h-full w-full border-0"
                 allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
-                referrerPolicy="no-referrer"
-                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+                referrerPolicy="origin-when-cross-origin"
               />
             ) : (
               <>

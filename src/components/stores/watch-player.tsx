@@ -153,6 +153,9 @@ export function WatchPlayer({
     episodeNumber,
   ]);
 
+  const hasPrimary = allSources.some((s) => s.tier === "primary" || s.tier === "backup_vn");
+  const [showFallbacks, setShowFallbacks] = useState(!hasPrimary);
+
   // Reset states when input URLs or episode changes
   useEffect(() => {
     setActiveSourceIndex(0);
@@ -160,13 +163,15 @@ export function WatchPlayer({
     setHasError(false);
     setAutoFallbackNotice(null);
     setFailedSources(new Set());
-  }, [embedUrl, streamUrl, episodeNumber]);
+    setShowFallbacks(!hasPrimary);
+  }, [embedUrl, streamUrl, episodeNumber, hasPrimary]);
 
   const currentSource = allSources[activeSourceIndex] || allSources[0];
 
   // Auto-failover logic to next tier
   const handleSourceError = useCallback(() => {
     setIsLoading(false);
+    setShowFallbacks(true);
     setFailedSources((prev) => new Set([...prev, activeSourceIndex]));
 
     // Find next non-failed source index
@@ -302,8 +307,7 @@ export function WatchPlayer({
             className="h-full w-full border-0"
             allowFullScreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="no-referrer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+            referrerPolicy="origin-when-cross-origin"
             style={{ background: "#000000" }}
             onLoad={() => setIsLoading(false)}
             onError={handleSourceError}
@@ -416,7 +420,11 @@ export function WatchPlayer({
             <span>Máy chủ phát:</span>
           </div>
 
-          {allSources.map((source, index) => {
+          {(showFallbacks
+            ? allSources
+            : allSources.filter((s) => s.tier === "primary" || s.tier === "backup_vn")
+          ).map((source) => {
+            const index = allSources.findIndex((s) => s.id === source.id);
             const isActive = index === activeSourceIndex;
             return (
               <button
@@ -438,6 +446,17 @@ export function WatchPlayer({
               </button>
             );
           })}
+
+          {!showFallbacks && allSources.length > (allSources.filter((s) => s.tier === "primary" || s.tier === "backup_vn").length) && (
+            <button
+              type="button"
+              onClick={() => setShowFallbacks(true)}
+              className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold border opacity-75 hover:opacity-100 hover:scale-105 transition-all"
+              style={{ borderColor: store.theme.border, color: store.theme.textMuted }}
+            >
+              <span>+ Nguồn dự phòng VIP</span>
+            </button>
+          )}
         </div>
 
         {/* Quality & Language Meta Badges */}
