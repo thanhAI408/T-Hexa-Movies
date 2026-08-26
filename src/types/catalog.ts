@@ -1,4 +1,11 @@
-export const PROVIDER_IDS = ["vsmov", "ophim", "nguonc", "kkphim"] as const;
+export const PROVIDER_IDS = [
+  "vsmov",
+  "ophim",
+  "nguonc",
+  "kkphim",
+  "vidsrc",
+  "vidlink",
+] as const;
 
 export type ProviderId = (typeof PROVIDER_IDS)[number];
 

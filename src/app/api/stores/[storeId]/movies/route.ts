@@ -6,6 +6,7 @@ import { kkphimProvider } from "@/providers/kkphim";
 import { STORE_API_MAP } from "@/lib/stores/config";
 import type { ProviderMovieInput } from "@/types/catalog";
 import type { ProviderListKind } from "@/providers/types";
+import { getRemainingVnProviders } from "@/lib/streaming/fallback";
 
 // Map slug -> provider
 const PROVIDER_MAP: Record<string, {
@@ -107,7 +108,7 @@ export async function GET(
   }
 
   const apiId = STORE_API_MAP[storeId] || storeId;
-  const provider = PROVIDER_MAP[apiId] || kkphimProvider;
+  const primaryProvider = PROVIDER_MAP[apiId] || kkphimProvider;
 
   const searchParams = request.nextUrl.searchParams;
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
@@ -118,27 +119,42 @@ export async function GET(
   const groupByYear = searchParams.get("groupByYear") === "true";
   const validSort = VALID_SORTS.includes(sort) ? sort : "updated";
 
+  const fallbackSequence = [primaryProvider, ...getRemainingVnProviders(apiId).map((id) => PROVIDER_MAP[id]).filter(Boolean)];
+
   try {
     if (query) {
-      let result;
-      try {
-        result = await provider.search(query, page, limit);
-      } catch {
-        result = await kkphimProvider.search(query, page, limit);
+      let result = null;
+      for (const provider of fallbackSequence) {
+        try {
+          result = await provider.search(query, page, limit);
+          if (result && result.items && result.items.length > 0) break;
+        } catch {
+          // Try next in sequence
+        }
       }
+
+      if (!result) {
+        result = { items: [], pagination: { currentPage: page, totalPages: 1, totalItems: 0, itemsPerPage: limit } };
+      }
+
       const sortedItems = sortMovies(result.items, validSort);
       return NextResponse.json({ ...result, items: sortedItems });
     }
 
     const validKind = VALID_KINDS.includes(kind) ? kind : "latest";
-    let result;
-    try {
-      result = await provider.getList(validKind, page, limit);
-      if (!result.items || result.items.length === 0) {
-        result = await kkphimProvider.getList(validKind, page, limit);
+    let result = null;
+
+    for (const provider of fallbackSequence) {
+      try {
+        result = await provider.getList(validKind, page, limit);
+        if (result && result.items && result.items.length > 0) break;
+      } catch {
+        // Try next in sequence
       }
-    } catch {
-      result = await kkphimProvider.getList(validKind, page, limit);
+    }
+
+    if (!result) {
+      result = { items: [], pagination: { currentPage: page, totalPages: 1, totalItems: 0, itemsPerPage: limit } };
     }
 
     const sortedItems = sortMovies(result.items, validSort);

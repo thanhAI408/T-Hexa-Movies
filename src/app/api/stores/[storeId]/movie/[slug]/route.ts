@@ -1,18 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { vsmovProvider } from "@/providers/vsmov";
-import { ophimProvider } from "@/providers/ophim";
-import { nguoncProvider } from "@/providers/nguonc";
-import { kkphimProvider } from "@/providers/kkphim";
-import { STORE_API_MAP } from "@/lib/stores/config";
+import { getMovieDetail } from "@/lib/stores/actions";
 
-const PROVIDER_MAP: Record<string, { getMovie: typeof vsmovProvider.getMovie }> = {
-  vsmov: vsmovProvider,
-  ophim: ophimProvider,
-  nguonc: nguoncProvider,
-  kkphim: kkphimProvider,
-};
-
-// Valid store slugs (both new and old)
 const VALID_STORES = [
   "binh-minh", "ban-mai", "hoang-hon", "da-nguyet",
   "xuan", "ha", "thu", "dong",
@@ -32,17 +20,6 @@ export async function GET(
     );
   }
 
-  // Get API provider from store config
-  const apiId = STORE_API_MAP[storeId] || storeId;
-  const provider = PROVIDER_MAP[apiId];
-
-  if (!provider) {
-    return NextResponse.json(
-      { error: "Store not found" },
-      { status: 404 }
-    );
-  }
-
   if (!slug || slug.trim() === "") {
     return NextResponse.json(
       { error: "Movie slug is required" },
@@ -51,7 +28,7 @@ export async function GET(
   }
 
   try {
-    const result = await provider.getMovie(slug);
+    const result = await getMovieDetail(storeId, slug);
 
     if (!result) {
       return NextResponse.json(
@@ -62,7 +39,7 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error(`[API] Store ${storeId} (${apiId}) movie ${slug} error:`, error);
+    console.error(`[API] Store ${storeId} movie ${slug} error:`, error);
     return NextResponse.json(
       { error: "Failed to fetch movie details" },
       { status: 500 }

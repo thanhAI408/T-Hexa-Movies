@@ -69,6 +69,9 @@ function normalizeMovie(movie: any, provider: string, cdnBase?: string) {
     ? "series"
     : "single";
 
+  const tmdbId = movie.tmdb?.id ? String(movie.tmdb.id) : (movie.tmdb_id || movie.externalIds?.tmdbId || null);
+  const imdbId = movie.imdb?.id ? String(movie.imdb.id) : (movie.imdb_id || movie.externalIds?.imdbId || null);
+
   return {
     providerSlug: movie.slug || movie.providerSlug,
     providerMovieId: movie._id || movie.id || movie.providerMovieId,
@@ -81,6 +84,10 @@ function normalizeMovie(movie: any, provider: string, cdnBase?: string) {
     type,
     rating: movie.tmdb?.vote_average ? parseFloat(movie.tmdb.vote_average) : (movie.rating || null),
     providerUpdatedAt: movie.modified?.time || movie.updatedAt || movie.providerUpdatedAt || null,
+    externalIds: {
+      tmdbId,
+      imdbId,
+    },
   };
 }
 

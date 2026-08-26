@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Expand, List, Settings, Volume2, VolumeX } from "lucide-react";
 import type { MovieDetailView } from "@/types/catalog";
 import { saveWatchHistory, WatchHistoryEntry } from "@/components/home/continue-watching";
+import { buildVidSrcEmbed, buildVidLinkEmbed } from "@/lib/streaming/fallback";
 
 export default function WatchPage() {
   const params = useParams();
@@ -56,10 +57,68 @@ export default function WatchPage() {
   const currentEpisodeData = movie?.episodes.find(
     (episode) => episode.episodeKey === currentEpisode,
   );
-  const sources = useMemo(
-    () => currentEpisodeData?.sources ?? [],
-    [currentEpisodeData],
-  );
+  const sources = useMemo(() => {
+    const rawSources = [...(currentEpisodeData?.sources ?? [])];
+
+    const tmdbId = (movie as any)?.tmdbId || (movie as any)?.externalIds?.tmdbId || null;
+    const imdbId = (movie as any)?.imdbId || (movie as any)?.externalIds?.imdbId || null;
+    const seasonNumber = currentEpisodeData?.seasonNumber ?? 1;
+    const episodeNumber = currentEpisodeData?.episodeNumber ?? 1;
+
+    if (tmdbId || imdbId) {
+      const vidsrcEmbed = buildVidSrcEmbed({
+        tmdbId,
+        imdbId,
+        type: movie?.type,
+        seasonNumber,
+        episodeNumber,
+      });
+      if (vidsrcEmbed && !rawSources.some((s) => s.provider === "vidsrc")) {
+        rawSources.push({
+          id: `vidsrc-${currentEpisode}`,
+          provider: "vidsrc",
+          serverName: "VidSrc (Fallback 1)",
+          streamType: "embed",
+          streamUrl: null,
+          embedUrl: vidsrcEmbed,
+          quality: "1080p",
+          language: "Quốc tế (Eng/Sub)",
+          health: "healthy",
+          successCount: 1,
+          failureCount: 0,
+          startupLatencyMs: null,
+          priorityScore: 18,
+        });
+      }
+
+      const vidlinkEmbed = buildVidLinkEmbed({
+        tmdbId,
+        imdbId,
+        type: movie?.type,
+        seasonNumber,
+        episodeNumber,
+      });
+      if (vidlinkEmbed && !rawSources.some((s) => s.provider === "vidlink")) {
+        rawSources.push({
+          id: `vidlink-${currentEpisode}`,
+          provider: "vidlink",
+          serverName: "VidLink (Fallback 2)",
+          streamType: "embed",
+          streamUrl: null,
+          embedUrl: vidlinkEmbed,
+          quality: "1080p",
+          language: "Quốc tế (Eng/Sub)",
+          health: "healthy",
+          successCount: 1,
+          failureCount: 0,
+          startupLatencyMs: null,
+          priorityScore: 17,
+        });
+      }
+    }
+
+    return rawSources;
+  }, [currentEpisodeData, movie, currentEpisode]);
   const rankedSources = useMemo(() => {
     const sorted = [...sources].sort((a, b) => b.priorityScore - a.priorityScore);
     const healthy = sorted.filter((source) => source.health !== "unavailable");

@@ -8,6 +8,7 @@ import { StoreProvider } from "@/components/stores/theme-provider";
 import { getMovieDetail } from "@/lib/stores/actions";
 import { WatchPlayer } from "@/components/stores/watch-player";
 import { EpisodeList } from "@/components/stores/episode-list";
+import { buildEpisodePlaybackSources } from "@/lib/streaming/fallback";
 
 interface Props {
   params: Promise<{ slug: string; movie: string }>;
@@ -56,9 +57,9 @@ export default async function WatchPage({ params, searchParams }: Props) {
 
   const { movie: movieInfo, episodes } = movieDetail;
 
-  // Deduplicate episodes by episodeKey (some sources return duplicates)
+  // Deduplicate episodes by episodeKey and serverName
   const uniqueEpisodes = episodes.reduce((acc, ep) => {
-    if (!acc.find((e) => e.episodeKey === ep.episodeKey)) {
+    if (!acc.find((e) => e.episodeKey === ep.episodeKey && e.serverName === ep.serverName)) {
       acc.push(ep);
     }
     return acc;
@@ -69,9 +70,15 @@ export default async function WatchPage({ params, searchParams }: Props) {
     ? uniqueEpisodes.find((ep) => ep.episodeKey === episodeKey) || uniqueEpisodes[0]
     : uniqueEpisodes[0];
 
-  // Get source URLs
+  // Build all tiered fallback sources (Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN)
+  const playbackSources = buildEpisodePlaybackSources(movieInfo, selectedEpisode, episodes);
+
+  // Primary source URLs
   const embedUrl = selectedEpisode?.embedUrl;
   const streamUrl = selectedEpisode?.streamUrl;
+
+  const tmdbId = movieInfo.externalIds?.tmdbId || (movieInfo.raw?.tmdb as any)?.id ? String((movieInfo.raw?.tmdb as any)?.id) : null;
+  const imdbId = movieInfo.externalIds?.imdbId || (movieInfo.raw?.imdb as any)?.id ? String((movieInfo.raw?.imdb as any)?.id) : null;
 
   return (
     <StoreProvider store={store}>
@@ -144,6 +151,12 @@ export default async function WatchPage({ params, searchParams }: Props) {
             streamUrl={streamUrl}
             quality={selectedEpisode?.quality}
             language={selectedEpisode?.language}
+            fallbackSources={playbackSources}
+            tmdbId={tmdbId}
+            imdbId={imdbId}
+            seasonNumber={selectedEpisode?.seasonNumber}
+            episodeNumber={selectedEpisode?.episodeNumber}
+            movieType={movieInfo.type}
           />
         </div>
 
