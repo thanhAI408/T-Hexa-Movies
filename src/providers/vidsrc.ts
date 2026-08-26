@@ -341,7 +341,7 @@ export const vidsrcProvider: MovieProvider & {
           episodeNumber: ep,
         });
 
-        if (autoEmbed) {
+        if (autoEmbed || vidlinkEmbed || multiEmbed) {
           episodes.push({
             episodeKey: epKey,
             episodeLabel: label,
@@ -349,62 +349,11 @@ export const vidsrcProvider: MovieProvider & {
             episodeNumber: ep,
             seasonNumber: s,
             provider: "vidsrc",
-            serverName: "AutoEmbed VIP (Sạch Quảng Cáo)",
+            serverName: "Ban Mai VIP",
             streamType: "embed",
             streamUrl: null,
-            embedUrl: autoEmbed,
+            embedUrl: autoEmbed || vidlinkEmbed || multiEmbed,
             quality: "1080p Ultra",
-            language: "Phụ đề đa ngôn ngữ",
-          });
-        }
-
-        if (multiEmbed) {
-          episodes.push({
-            episodeKey: epKey,
-            episodeLabel: label,
-            episodeTitle: `Tập ${ep}`,
-            episodeNumber: ep,
-            seasonNumber: s,
-            provider: "vidsrc",
-            serverName: "MultiEmbed VIP (Quốc Tế 1)",
-            streamType: "embed",
-            streamUrl: null,
-            embedUrl: multiEmbed,
-            quality: "1080p Fast",
-            language: "Phụ đề đa ngôn ngữ",
-          });
-        }
-
-        if (vidsrcMe) {
-          episodes.push({
-            episodeKey: epKey,
-            episodeLabel: label,
-            episodeTitle: `Tập ${ep}`,
-            episodeNumber: ep,
-            seasonNumber: s,
-            provider: "vidsrc",
-            serverName: "VidSrc VIP (Quốc Tế 2)",
-            streamType: "embed",
-            streamUrl: null,
-            embedUrl: vidsrcMe,
-            quality: "1080p Ultra",
-            language: "Phụ đề đa ngôn ngữ",
-          });
-        }
-
-        if (vidlinkEmbed) {
-          episodes.push({
-            episodeKey: epKey,
-            episodeLabel: label,
-            episodeTitle: `Tập ${ep}`,
-            episodeNumber: ep,
-            seasonNumber: s,
-            provider: "vidlink",
-            serverName: "VidLink VIP (Quốc Tế 3)",
-            streamType: "embed",
-            streamUrl: null,
-            embedUrl: vidlinkEmbed,
-            quality: "1080p Fast",
             language: "Phụ đề đa ngôn ngữ",
           });
         }
