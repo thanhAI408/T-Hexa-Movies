@@ -77,10 +77,156 @@ function normalizeTmdbMovie(item: any, defaultType?: MovieType, isCinema = false
   };
 }
 
-export const vidsrcProvider: MovieProvider = {
+const TMDB_GENRE_MAP: Record<string, string> = {
+  "hanh-dong": "28",
+  "action": "28",
+  "phieu-luu": "12",
+  "adventure": "12",
+  "hoat-hinh": "16",
+  "animation": "16",
+  "hai-huoc": "35",
+  "comedy": "35",
+  "hinh-su": "80",
+  "crime": "80",
+  "tai-lieu": "99",
+  "documentary": "99",
+  "chinh-kich": "18",
+  "tam-ly": "18",
+  "drama": "18",
+  "gia-dinh": "10751",
+  "family": "10751",
+  "gia-tuong": "14",
+  "fantasy": "14",
+  "lich-su": "36",
+  "history": "36",
+  "kinh-di": "27",
+  "horror": "27",
+  "am-nhac": "10402",
+  "music": "10402",
+  "bi-an": "9648",
+  "mystery": "9648",
+  "lang-man": "10749",
+  "tinh-cam": "10749",
+  "romance": "10749",
+  "khoa-hoc-vien-tuong": "878",
+  "sci-fi": "878",
+  "giat-gan": "53",
+  "thriller": "53",
+  "chien-tranh": "10752",
+  "war": "10752",
+  "tay-ban-nha": "37",
+  "western": "37",
+};
+
+const TMDB_COUNTRY_MAP: Record<string, string> = {
+  "han-quoc": "KR",
+  "korea": "KR",
+  "kr": "KR",
+  "trung-quoc": "CN",
+  "china": "CN",
+  "cn": "CN",
+  "au-my": "US",
+  "my": "US",
+  "us": "US",
+  "nhat-ban": "JP",
+  "japan": "JP",
+  "jp": "JP",
+  "thai-lan": "TH",
+  "thailand": "TH",
+  "th": "TH",
+  "viet-nam": "VN",
+  "vietnam": "VN",
+  "vn": "VN",
+  "anh": "GB",
+  "uk": "GB",
+  "gb": "GB",
+  "phap": "FR",
+  "france": "FR",
+  "fr": "FR",
+  "hong-kong": "HK",
+  "hk": "HK",
+  "dai-loan": "TW",
+  "taiwan": "TW",
+  "tw": "TW",
+  "an-do": "IN",
+  "india": "IN",
+  "in": "IN",
+};
+
+export const vidsrcProvider: MovieProvider & {
+  getFilteredList?: (filters: {
+    kind?: string;
+    genre?: string;
+    country?: string;
+    year?: string;
+    page?: number;
+    limit?: number;
+  }) => Promise<ProviderListResult>;
+} = {
   id: "vidsrc",
   displayName: "VidSrc Quốc Tế",
   baseUrl: "https://vidsrc.to",
+
+  async getFilteredList(filters: {
+    kind?: string;
+    genre?: string;
+    country?: string;
+    year?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ProviderListResult> {
+    const page = filters.page || 1;
+    const limit = filters.limit || 24;
+    const isTv = filters.kind === "series" || filters.kind === "tvshow";
+    const endpoint = isTv ? "/discover/tv" : "/discover/movie";
+
+    const params: Record<string, any> = {
+      page,
+      sort_by: "popularity.desc",
+    };
+
+    if (filters.genre) {
+      const genreId = TMDB_GENRE_MAP[filters.genre.toLowerCase()] || filters.genre;
+      if (genreId) params.with_genres = genreId;
+    }
+
+    if (filters.country) {
+      const countryCode = TMDB_COUNTRY_MAP[filters.country.toLowerCase()] || filters.country.toUpperCase();
+      if (countryCode) params.with_origin_country = countryCode;
+    }
+
+    if (filters.year) {
+      const year = parseInt(filters.year, 10);
+      if (!isNaN(year)) {
+        if (isTv) {
+          params.first_air_date_year = year;
+        } else {
+          params.primary_release_year = year;
+        }
+      }
+    }
+
+    if (filters.kind === "animation") {
+      params.with_genres = params.with_genres ? `${params.with_genres},16` : "16";
+    }
+
+    const data = await fetchTmdb(endpoint, params);
+    const results = data?.results || [];
+    const typeHint: MovieType = isTv ? "series" : (filters.kind === "animation" ? "animation" : "single");
+    const items = results.map((m: any) => normalizeTmdbMovie(m, typeHint)).slice(0, limit);
+    const totalItems = data?.total_results || 10000;
+    const totalPages = Math.min(500, data?.total_pages || 500);
+
+    return {
+      items,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage: limit,
+      },
+    };
+  },
 
   async healthCheck(): Promise<ProviderHealthResult> {
     const data = await fetchTmdb("/trending/movie/day");
@@ -112,53 +258,7 @@ export const vidsrcProvider: MovieProvider = {
   },
 
   async getList(kind: ProviderListKind, page = 1, limit = 24): Promise<ProviderListResult> {
-    let endpoint = "/discover/movie";
-    const params: Record<string, any> = {
-      page,
-      sort_by: "popularity.desc",
-    };
-    let typeHint: MovieType = "single";
-    let isCinema = false;
-
-    switch (kind) {
-      case "series":
-      case "tvshow":
-        endpoint = "/discover/tv";
-        typeHint = "series";
-        break;
-      case "animation":
-        endpoint = "/discover/movie";
-        params.with_genres = "16";
-        typeHint = "animation";
-        break;
-      case "cinema":
-        endpoint = "/movie/now_playing";
-        typeHint = "single";
-        isCinema = true;
-        break;
-      case "single":
-      case "latest":
-      default:
-        endpoint = "/discover/movie";
-        typeHint = "single";
-        break;
-    }
-
-    const data = await fetchTmdb(endpoint, params);
-    const results = data?.results || [];
-    const items = results.map((m: any) => normalizeTmdbMovie(m, typeHint, isCinema)).slice(0, limit);
-    const totalItems = data?.total_results || 10000;
-    const totalPages = Math.min(500, data?.total_pages || 500);
-
-    return {
-      items,
-      pagination: {
-        currentPage: page,
-        totalPages,
-        totalItems,
-        itemsPerPage: limit,
-      },
-    };
+    return this.getFilteredList ? this.getFilteredList({ kind, page, limit }) : this.getLatest(page, limit);
   },
 
   async search(query: string, page = 1, limit = 24): Promise<ProviderListResult> {

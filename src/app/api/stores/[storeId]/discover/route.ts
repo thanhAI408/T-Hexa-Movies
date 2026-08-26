@@ -367,7 +367,9 @@ async function discoverOphim(params: {
     try {
       const vidsrcRes = params.q
         ? await vidsrcProvider.search(params.q, params.page, params.limit)
-        : await vidsrcProvider.getList((params.kind as any) || "latest", params.page, params.limit);
+        : (vidsrcProvider.getFilteredList
+            ? await vidsrcProvider.getFilteredList(params)
+            : await vidsrcProvider.getList((params.kind as any) || "latest", params.page, params.limit));
       if (vidsrcRes && vidsrcRes.items && vidsrcRes.items.length > 0) {
         return vidsrcRes;
       }
