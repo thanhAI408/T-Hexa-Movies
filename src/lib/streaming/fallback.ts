@@ -101,25 +101,46 @@ export function buildVidLinkEmbed(params: FallbackParams): string | null {
   return `https://vidlink.pro/movie/${encodeURIComponent(identifier)}?primaryColor=ea580c&secondaryColor=f97316&iconColor=ffffff&title=true&poster=true&autoplay=false`;
 }
 
-export function buildVidLinkMirrors(params: FallbackParams): string[] {
+export function buildAutoEmbed(params: FallbackParams): string | null {
   const identifier = sanitizeId(params.tmdbId) || sanitizeId(params.imdbId);
-  if (!identifier) return [];
+  if (!identifier) return null;
 
   const isSeries = params.type === "series" || params.type === "tvshow" || params.type === "animation";
   const season = Math.max(1, params.seasonNumber ?? 1);
   const episode = Math.max(1, params.episodeNumber ?? 1);
 
   if (isSeries) {
-    return [
-      `https://vidlink.pro/tv/${encodeURIComponent(identifier)}/${season}/${episode}`,
-      `https://vidlink.pro/embed/tv/${encodeURIComponent(identifier)}/${season}/${episode}`,
-    ];
+    return `https://autoembed.co/tv/tmdb/${encodeURIComponent(identifier)}-${season}-${episode}`;
   }
+  return `https://autoembed.co/movie/tmdb/${encodeURIComponent(identifier)}`;
+}
 
-  return [
-    `https://vidlink.pro/movie/${encodeURIComponent(identifier)}`,
-    `https://vidlink.pro/embed/movie/${encodeURIComponent(identifier)}`,
-  ];
+export function buildMultiEmbed(params: FallbackParams): string | null {
+  const identifier = sanitizeId(params.tmdbId) || sanitizeId(params.imdbId);
+  if (!identifier) return null;
+
+  const isSeries = params.type === "series" || params.type === "tvshow" || params.type === "animation";
+  const season = Math.max(1, params.seasonNumber ?? 1);
+  const episode = Math.max(1, params.episodeNumber ?? 1);
+
+  if (isSeries) {
+    return `https://multiembed.mov/?video_id=${encodeURIComponent(identifier)}&tmdb=1&s=${season}&e=${episode}`;
+  }
+  return `https://multiembed.mov/?video_id=${encodeURIComponent(identifier)}&tmdb=1`;
+}
+
+export function buildVidSrcMe(params: FallbackParams): string | null {
+  const identifier = sanitizeId(params.tmdbId) || sanitizeId(params.imdbId);
+  if (!identifier) return null;
+
+  const isSeries = params.type === "series" || params.type === "tvshow" || params.type === "animation";
+  const season = Math.max(1, params.seasonNumber ?? 1);
+  const episode = Math.max(1, params.episodeNumber ?? 1);
+
+  if (isSeries) {
+    return `https://vidsrc.me/embed/tv?tmdb=${encodeURIComponent(identifier)}&season=${season}&episode=${episode}`;
+  }
+  return `https://vidsrc.me/embed/movie?tmdb=${encodeURIComponent(identifier)}`;
 }
 
 /**

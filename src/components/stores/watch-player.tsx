@@ -61,6 +61,30 @@ export function WatchPlayer({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Install AdBlock Shield on client to intercept any window.open popup attempts
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const originalOpen = window.open;
+    window.open = function (...args) {
+      console.warn("[AdBlock Shield] Prevented ad popup tab:", args);
+      return null;
+    };
+
+    const handleWindowBlur = () => {
+      setTimeout(() => {
+        window.focus();
+      }, 50);
+    };
+
+    window.addEventListener("blur", handleWindowBlur);
+
+    return () => {
+      window.open = originalOpen;
+      window.removeEventListener("blur", handleWindowBlur);
+    };
+  }, []);
+
   // 1. Build all available playback sources (Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN)
   const allSources = useMemo<PlaybackSource[]>(() => {
     if (fallbackSources.length > 0) {

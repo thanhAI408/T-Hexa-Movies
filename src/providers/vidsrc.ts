@@ -7,7 +7,7 @@ import type {
   TaxonomyItem,
 } from "@/types/catalog";
 import type { MovieProvider, ProviderListKind } from "@/providers/types";
-import { buildVidSrcEmbed, buildVidLinkEmbed } from "@/lib/streaming/fallback";
+import { buildVidSrcEmbed, buildVidLinkEmbed, buildAutoEmbed, buildMultiEmbed, buildVidSrcMe } from "@/lib/streaming/fallback";
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY || "e9e9d8da18ae29fc430845952232787c";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -313,7 +313,21 @@ export const vidsrcProvider: MovieProvider & {
         const epKey = isTv ? `tap-${ep}-s${s}` : "tap-01";
         const label = isTv ? `Mùa ${s} - Tập ${ep}` : "Full HD";
 
-        const vidsrcEmbed = buildVidSrcEmbed({
+        const autoEmbed = buildAutoEmbed({
+          tmdbId: id,
+          type: isTv ? "series" : "single",
+          seasonNumber: s,
+          episodeNumber: ep,
+        });
+
+        const multiEmbed = buildMultiEmbed({
+          tmdbId: id,
+          type: isTv ? "series" : "single",
+          seasonNumber: s,
+          episodeNumber: ep,
+        });
+
+        const vidsrcMe = buildVidSrcMe({
           tmdbId: id,
           type: isTv ? "series" : "single",
           seasonNumber: s,
@@ -327,6 +341,57 @@ export const vidsrcProvider: MovieProvider & {
           episodeNumber: ep,
         });
 
+        if (autoEmbed) {
+          episodes.push({
+            episodeKey: epKey,
+            episodeLabel: label,
+            episodeTitle: `Tập ${ep}`,
+            episodeNumber: ep,
+            seasonNumber: s,
+            provider: "vidsrc",
+            serverName: "AutoEmbed VIP (Sạch Quảng Cáo)",
+            streamType: "embed",
+            streamUrl: null,
+            embedUrl: autoEmbed,
+            quality: "1080p Ultra",
+            language: "Phụ đề đa ngôn ngữ",
+          });
+        }
+
+        if (multiEmbed) {
+          episodes.push({
+            episodeKey: epKey,
+            episodeLabel: label,
+            episodeTitle: `Tập ${ep}`,
+            episodeNumber: ep,
+            seasonNumber: s,
+            provider: "vidsrc",
+            serverName: "MultiEmbed VIP (Quốc Tế 1)",
+            streamType: "embed",
+            streamUrl: null,
+            embedUrl: multiEmbed,
+            quality: "1080p Fast",
+            language: "Phụ đề đa ngôn ngữ",
+          });
+        }
+
+        if (vidsrcMe) {
+          episodes.push({
+            episodeKey: epKey,
+            episodeLabel: label,
+            episodeTitle: `Tập ${ep}`,
+            episodeNumber: ep,
+            seasonNumber: s,
+            provider: "vidsrc",
+            serverName: "VidSrc VIP (Quốc Tế 2)",
+            streamType: "embed",
+            streamUrl: null,
+            embedUrl: vidsrcMe,
+            quality: "1080p Ultra",
+            language: "Phụ đề đa ngôn ngữ",
+          });
+        }
+
         if (vidlinkEmbed) {
           episodes.push({
             episodeKey: epKey,
@@ -335,28 +400,11 @@ export const vidsrcProvider: MovieProvider & {
             episodeNumber: ep,
             seasonNumber: s,
             provider: "vidlink",
-            serverName: "VidLink VIP (Không Quảng Cáo)",
+            serverName: "VidLink VIP (Quốc Tế 3)",
             streamType: "embed",
             streamUrl: null,
             embedUrl: vidlinkEmbed,
             quality: "1080p Fast",
-            language: "Phụ đề đa ngôn ngữ",
-          });
-        }
-
-        if (vidsrcEmbed) {
-          episodes.push({
-            episodeKey: epKey,
-            episodeLabel: label,
-            episodeTitle: `Tập ${ep}`,
-            episodeNumber: ep,
-            seasonNumber: s,
-            provider: "vidsrc",
-            serverName: "VidSrc VIP (Quốc Tế)",
-            streamType: "embed",
-            streamUrl: null,
-            embedUrl: vidsrcEmbed,
-            quality: "1080p Ultra",
             language: "Phụ đề đa ngôn ngữ",
           });
         }
