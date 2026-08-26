@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { STORE_API_MAP } from "@/lib/stores/config";
+import { vidsrcProvider } from "@/providers/vidsrc";
+import { vidlinkProvider } from "@/providers/vidlink";
 
 const VALID_STORES = [
   "binh-minh", "ban-mai", "hoang-hon", "da-nguyet",
@@ -361,7 +363,31 @@ async function discoverOphim(params: {
 
   const data = await fetchJson(`${baseUrl}${path}?${searchParams.toString()}`);
   if (!data) {
-    // Graceful fallback to NguonC if OPhim is unreachable (avoids duplicating with KKPhim/Da Nguyet)
+    // 1. Fallback 1: VidSrc / TMDB
+    try {
+      const vidsrcRes = params.q
+        ? await vidsrcProvider.search(params.q, params.page, params.limit)
+        : await vidsrcProvider.getList((params.kind as any) || "latest", params.page, params.limit);
+      if (vidsrcRes && vidsrcRes.items && vidsrcRes.items.length > 0) {
+        return vidsrcRes;
+      }
+    } catch (e) {
+      console.warn("[Discover] VidSrc fallback error:", e);
+    }
+
+    // 2. Fallback 2: VidLink / TMDB
+    try {
+      const vidlinkRes = params.q
+        ? await vidlinkProvider.search(params.q, params.page, params.limit)
+        : await vidlinkProvider.getList((params.kind as any) || "latest", params.page, params.limit);
+      if (vidlinkRes && vidlinkRes.items && vidlinkRes.items.length > 0) {
+        return vidlinkRes;
+      }
+    } catch (e) {
+      console.warn("[Discover] VidLink fallback error:", e);
+    }
+
+    // 3. Fallback 3: NguonC
     return discoverNguonc(params);
   }
 
@@ -512,6 +538,14 @@ export async function GET(
   } catch (error) {
     console.error(`[API] Discover ${storeId} error:`, error);
     if (storeId === "ban-mai") {
+      try {
+        const vidsrcRes = q
+          ? await vidsrcProvider.search(q, page, limit)
+          : await vidsrcProvider.getList((kind as any) || "latest", page, limit);
+        if (vidsrcRes && vidsrcRes.items && vidsrcRes.items.length > 0) {
+          return NextResponse.json(vidsrcRes);
+        }
+      } catch {}
       const fallback = await discoverNguonc({ kind, genre, country, year, sort, page, limit, q });
       return NextResponse.json(fallback);
     }

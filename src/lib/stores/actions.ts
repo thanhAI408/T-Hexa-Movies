@@ -2,6 +2,8 @@ import { vsmovProvider } from "@/providers/vsmov";
 import { ophimProvider } from "@/providers/ophim";
 import { nguoncProvider } from "@/providers/nguonc";
 import { kkphimProvider } from "@/providers/kkphim";
+import { vidsrcProvider } from "@/providers/vidsrc";
+import { vidlinkProvider } from "@/providers/vidlink";
 import { STORE_API_MAP } from "@/lib/stores/config";
 import type { ProviderDetail, ProviderListResult } from "@/types/catalog";
 import type { ProviderListKind } from "@/providers/types";
@@ -17,6 +19,8 @@ const PROVIDER_MAP: Record<string, MovieProvider> = {
   ophim: ophimProvider,
   nguonc: nguoncProvider,
   kkphim: kkphimProvider,
+  vidsrc: vidsrcProvider,
+  vidlink: vidlinkProvider,
 };
 
 export async function getMovieDetail(storeId: string, slug: string): Promise<ProviderDetail | null> {
@@ -34,7 +38,31 @@ export async function getMovieDetail(storeId: string, slug: string): Promise<Pro
     }
   }
 
-  // 2. If Primary Provider fails, activate Fallback 3 across other Vietnamese providers
+  // 2. FALLBACK 1: VidSrc (Quốc tế VIP 1 qua TMDB)
+  if (!detail) {
+    try {
+      detail = await vidsrcProvider.getMovie(slug);
+      if (detail) {
+        console.info(`[Actions] Recovered movie ${slug} using Fallback 1 (VidSrc)`);
+      }
+    } catch (e) {
+      // Continue to Fallback 2
+    }
+  }
+
+  // 3. FALLBACK 2: VidLink (Quốc tế VIP 2 qua TMDB)
+  if (!detail) {
+    try {
+      detail = await vidlinkProvider.getMovie(slug);
+      if (detail) {
+        console.info(`[Actions] Recovered movie ${slug} using Fallback 2 (VidLink)`);
+      }
+    } catch (e) {
+      // Continue to Fallback 3
+    }
+  }
+
+  // 4. FALLBACK 3: Remaining Vietnamese Providers (KKPhim, NguonC, VSMov)
   if (!detail) {
     const backupProviders = getRemainingVnProviders(apiId);
     for (const backupId of backupProviders) {
@@ -44,10 +72,10 @@ export async function getMovieDetail(storeId: string, slug: string): Promise<Pro
       try {
         detail = await backupProvider.getMovie(slug);
         if (detail) {
-          console.info(`[Actions] Successfully recovered movie ${slug} using Fallback 3 (${backupId})`);
+          console.info(`[Actions] Recovered movie ${slug} using Fallback 3 (${backupId})`);
           break;
         }
-      } catch (backupError) {
+      } catch {
         // Continue to next backup
       }
     }
@@ -64,11 +92,11 @@ export async function getMovieDetail(storeId: string, slug: string): Promise<Pro
         (m) => m.externalIds?.tmdbId || (m.raw?.tmdb as any)?.id
       );
       if (found) {
-        const resolvedTmdb = found.externalIds?.tmdbId || String((found.raw?.tmdb as any)?.id);
-        const resolvedImdb = found.externalIds?.imdbId || String((found.raw?.imdb as any)?.id || "");
+        const resolvedTmdb = found.externalIds?.tmdbId || (found.raw?.tmdb as any)?.id ? String((found.raw?.tmdb as any)?.id) : null;
+        const resolvedImdb = found.externalIds?.imdbId || (found.raw?.imdb as any)?.id ? String((found.raw?.imdb as any)?.id) : null;
         detail.movie.externalIds = {
-          tmdbId: resolvedTmdb || null,
-          imdbId: resolvedImdb || null,
+          tmdbId: resolvedTmdb,
+          imdbId: resolvedImdb,
         };
       }
     } catch {
@@ -76,7 +104,7 @@ export async function getMovieDetail(storeId: string, slug: string): Promise<Pro
     }
   }
 
-  // 3. Enrich with Fallback 1 (VidSrc) and Fallback 2 (VidLink) servers
+  // Enrich with Fallback 1 (VidSrc) and Fallback 2 (VidLink) servers
   return enrichEpisodesWithFallbacks(detail, storeId);
 }
 
@@ -87,6 +115,7 @@ export async function getRelatedMovies(storeId: string, options?: { limit?: numb
 
   let result: ProviderListResult | null = null;
 
+  // 1. Primary Provider
   if (primaryProvider) {
     try {
       result = await primaryProvider.getList("latest", 1, requestedLimit);
@@ -95,6 +124,25 @@ export async function getRelatedMovies(storeId: string, options?: { limit?: numb
     }
   }
 
+  // 2. Fallback 1: VidSrc
+  if (!result || !result.items || result.items.length === 0) {
+    try {
+      result = await vidsrcProvider.getList("latest", 1, requestedLimit);
+    } catch {
+      // Continue
+    }
+  }
+
+  // 3. Fallback 2: VidLink
+  if (!result || !result.items || result.items.length === 0) {
+    try {
+      result = await vidlinkProvider.getList("latest", 1, requestedLimit);
+    } catch {
+      // Continue
+    }
+  }
+
+  // 4. Fallback 3: VN Providers
   if (!result || !result.items || result.items.length === 0) {
     const backupProviders = getRemainingVnProviders(apiId);
     for (const backupId of backupProviders) {

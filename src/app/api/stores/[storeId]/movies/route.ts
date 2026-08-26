@@ -3,6 +3,8 @@ import { vsmovProvider } from "@/providers/vsmov";
 import { ophimProvider } from "@/providers/ophim";
 import { nguoncProvider } from "@/providers/nguonc";
 import { kkphimProvider } from "@/providers/kkphim";
+import { vidsrcProvider } from "@/providers/vidsrc";
+import { vidlinkProvider } from "@/providers/vidlink";
 import { STORE_API_MAP } from "@/lib/stores/config";
 import type { ProviderMovieInput } from "@/types/catalog";
 import type { ProviderListKind } from "@/providers/types";
@@ -18,6 +20,8 @@ const PROVIDER_MAP: Record<string, {
   ophim: ophimProvider,
   nguonc: nguoncProvider,
   kkphim: kkphimProvider,
+  vidsrc: vidsrcProvider,
+  vidlink: vidlinkProvider,
 };
 
 // Valid store slugs (both old and new)
@@ -119,7 +123,13 @@ export async function GET(
   const groupByYear = searchParams.get("groupByYear") === "true";
   const validSort = VALID_SORTS.includes(sort) ? sort : "updated";
 
-  const fallbackSequence = [primaryProvider, ...getRemainingVnProviders(apiId).map((id) => PROVIDER_MAP[id]).filter(Boolean)];
+  // Priority order: Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN Providers
+  const fallbackSequence = [
+    primaryProvider,
+    vidsrcProvider,
+    vidlinkProvider,
+    ...getRemainingVnProviders(apiId).map((id) => PROVIDER_MAP[id]).filter(Boolean),
+  ];
 
   try {
     if (query) {
@@ -173,7 +183,7 @@ export async function GET(
   } catch (error) {
     console.error(`[API] Store ${storeId} (${apiId}) error:`, error);
     try {
-      const fallbackResult = await kkphimProvider.getList("latest", page, limit);
+      const fallbackResult = await vidsrcProvider.getList("latest", page, limit);
       return NextResponse.json(fallbackResult);
     } catch {
       return NextResponse.json(

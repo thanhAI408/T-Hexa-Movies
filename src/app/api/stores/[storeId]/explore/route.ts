@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { STORE_API_MAP } from "@/lib/stores/config";
+import { vidsrcProvider } from "@/providers/vidsrc";
 
 const VALID_STORES = [
   "binh-minh", "ban-mai", "hoang-hon", "da-nguyet",
@@ -162,6 +163,27 @@ async function getOphimExplore() {
   let genres = (genresData?.data?.items || []).map((g: any) => ({ slug: g.slug, name: g.name }));
   let countries = (countriesData?.data?.items || []).map((c: any) => ({ slug: c.slug, name: c.name }));
   let yearsRaw = (yearsData?.data?.items || []).map((y: any) => y.year || y.name || y.slug);
+
+  if (genres.length === 0 || countries.length === 0) {
+    try {
+      const [vidsrcGenres, vidsrcCountries, vidsrcYears] = await Promise.all([
+        vidsrcProvider.getGenres(),
+        vidsrcProvider.getCountries(),
+        vidsrcProvider.getYears(),
+      ]);
+      if (genres.length === 0 && vidsrcGenres.length > 0) {
+        genres = vidsrcGenres.map((g) => ({ slug: g.slug, name: g.name }));
+      }
+      if (countries.length === 0 && vidsrcCountries.length > 0) {
+        countries = vidsrcCountries.map((c) => ({ slug: c.slug, name: c.name }));
+      }
+      if (yearsRaw.length === 0 && vidsrcYears.length > 0) {
+        yearsRaw = vidsrcYears;
+      }
+    } catch {
+      // Ignore
+    }
+  }
 
   if (genres.length === 0 || countries.length === 0) {
     const [kkGenres, kkCountries, kkYears] = await Promise.all([

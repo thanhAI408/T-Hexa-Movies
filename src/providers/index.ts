@@ -3,6 +3,8 @@ import { kkphimProvider } from "@/providers/kkphim";
 import { nguoncProvider } from "@/providers/nguonc";
 import { ophimProvider } from "@/providers/ophim";
 import { vsmovProvider } from "@/providers/vsmov";
+import { vidsrcProvider } from "@/providers/vidsrc";
+import { vidlinkProvider } from "@/providers/vidlink";
 import type { ProviderId } from "@/types/catalog";
 
 export const providers = [
@@ -10,6 +12,8 @@ export const providers = [
   ophimProvider,
   nguoncProvider,
   kkphimProvider,
+  vidsrcProvider,
+  vidlinkProvider,
 ] satisfies MovieProvider[];
 
 const providerMap = new Map<ProviderId, MovieProvider>(
@@ -21,3 +25,12 @@ export function getProvider(id: ProviderId) {
   if (!provider) throw new Error(`Unknown provider: ${id}`);
   return provider;
 }
+
+export {
+  kkphimProvider,
+  nguoncProvider,
+  ophimProvider,
+  vsmovProvider,
+  vidsrcProvider,
+  vidlinkProvider,
+};
