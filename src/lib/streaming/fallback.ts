@@ -295,7 +295,7 @@ export function enrichEpisodesWithFallbacks(
       episodeNumber,
     };
 
-    const autoEmbed = buildAutoEmbed(fallbackParams);
+    const autoEmbed = buildAutoEmbed(fallbackParams) || buildMultiEmbed(fallbackParams);
     if (autoEmbed) {
       cleanEpisodes.push({
         episodeKey: key,
@@ -304,30 +304,12 @@ export function enrichEpisodesWithFallbacks(
         episodeNumber,
         seasonNumber,
         provider: "vidsrc",
-        serverName: "AutoEmbed VIP (Sạch Quảng Cáo)",
+        serverName: "Ban Mai VIP",
         streamType: "embed",
         streamUrl: null,
         embedUrl: autoEmbed,
         quality: "1080p Ultra",
-        language: "Quốc tế (Eng/Sub)",
-      });
-    }
-
-    const multiEmbed = buildMultiEmbed(fallbackParams);
-    if (multiEmbed) {
-      cleanEpisodes.push({
-        episodeKey: key,
-        episodeLabel: label,
-        episodeTitle: sample?.episodeTitle || null,
-        episodeNumber,
-        seasonNumber,
-        provider: "vidsrc",
-        serverName: "MultiEmbed VIP (Quốc Tế 1)",
-        streamType: "embed",
-        streamUrl: null,
-        embedUrl: multiEmbed,
-        quality: "1080p Fast",
-        language: "Quốc tế (Eng/Sub)",
+        language: "Phụ đề đa ngôn ngữ",
       });
     }
   });
