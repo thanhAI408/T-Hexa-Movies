@@ -100,9 +100,9 @@ export function buildVidLinkEmbed(params: FallbackParams): string | null {
   const episode = Math.max(1, params.episodeNumber ?? 1);
 
   if (isSeries) {
-    return `https://vidlink.pro/tv/${encodeURIComponent(identifier)}/${season}/${episode}?primaryColor=ea580c&secondaryColor=f97316&iconColor=ffffff&title=true&poster=true&autoplay=false`;
+    return `https://vidlink.pro/tv/${encodeURIComponent(identifier)}/${season}/${episode}?primaryColor=ea580c&secondaryColor=f97316&iconColor=ffffff&title=true&poster=true&autoplay=false&sub.default=Vietnamese`;
   }
-  return `https://vidlink.pro/movie/${encodeURIComponent(identifier)}?primaryColor=ea580c&secondaryColor=f97316&iconColor=ffffff&title=true&poster=true&autoplay=false`;
+  return `https://vidlink.pro/movie/${encodeURIComponent(identifier)}?primaryColor=ea580c&secondaryColor=f97316&iconColor=ffffff&title=true&poster=true&autoplay=false&sub.default=Vietnamese`;
 }
 
 /**
