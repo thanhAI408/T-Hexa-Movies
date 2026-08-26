@@ -361,8 +361,8 @@ async function discoverOphim(params: {
 
   const data = await fetchJson(`${baseUrl}${path}?${searchParams.toString()}`);
   if (!data) {
-    // Graceful fallback to KKPhim if OPhim is unreachable
-    return discoverKkphim(params);
+    // Graceful fallback to NguonC if OPhim is unreachable (avoids duplicating with KKPhim/Da Nguyet)
+    return discoverNguonc(params);
   }
 
   const cdnBase = data.data?.APP_DOMAIN_CDN_IMAGE || "https://img.ophimimg.com";
@@ -397,6 +397,7 @@ async function discoverNguonc(params: {
   q?: string;
   sort?: string;
   page: number;
+  limit?: number;
 }) {
   const baseUrl = "https://phim.nguonc.com";
   let path = "/api/films/phim-moi-cap-nhat";
@@ -510,6 +511,10 @@ export async function GET(
     return NextResponse.json(result);
   } catch (error) {
     console.error(`[API] Discover ${storeId} error:`, error);
+    if (storeId === "ban-mai") {
+      const fallback = await discoverNguonc({ kind, genre, country, year, sort, page, limit, q });
+      return NextResponse.json(fallback);
+    }
     const fallback = await discoverKkphim({ kind, genre, country, year, sort, page, limit, q });
     return NextResponse.json(fallback);
   }
