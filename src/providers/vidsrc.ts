@@ -227,23 +227,6 @@ export const vidsrcProvider: MovieProvider = {
           episodeNumber: ep,
         });
 
-        if (vidsrcEmbed) {
-          episodes.push({
-            episodeKey: epKey,
-            episodeLabel: label,
-            episodeTitle: `Tập ${ep}`,
-            episodeNumber: ep,
-            seasonNumber: s,
-            provider: "vidsrc",
-            serverName: "VidSrc (Fallback 1)",
-            streamType: "embed",
-            streamUrl: null,
-            embedUrl: vidsrcEmbed,
-            quality: "1080p Ultra",
-            language: "Phụ đề đa ngôn ngữ",
-          });
-        }
-
         if (vidlinkEmbed) {
           episodes.push({
             episodeKey: epKey,
@@ -252,11 +235,28 @@ export const vidsrcProvider: MovieProvider = {
             episodeNumber: ep,
             seasonNumber: s,
             provider: "vidlink",
-            serverName: "VidLink (Fallback 2)",
+            serverName: "VidLink VIP (Không Quảng Cáo)",
             streamType: "embed",
             streamUrl: null,
             embedUrl: vidlinkEmbed,
             quality: "1080p Fast",
+            language: "Phụ đề đa ngôn ngữ",
+          });
+        }
+
+        if (vidsrcEmbed) {
+          episodes.push({
+            episodeKey: epKey,
+            episodeLabel: label,
+            episodeTitle: `Tập ${ep}`,
+            episodeNumber: ep,
+            seasonNumber: s,
+            provider: "vidsrc",
+            serverName: "VidSrc VIP (Quốc Tế)",
+            streamType: "embed",
+            streamUrl: null,
+            embedUrl: vidsrcEmbed,
+            quality: "1080p Ultra",
             language: "Phụ đề đa ngôn ngữ",
           });
         }

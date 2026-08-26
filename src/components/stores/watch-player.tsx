@@ -302,7 +302,8 @@ export function WatchPlayer({
             className="h-full w-full border-0"
             allowFullScreen
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="strict-origin-when-cross-origin"
+            referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             style={{ background: "#000000" }}
             onLoad={() => setIsLoading(false)}
             onError={handleSourceError}
