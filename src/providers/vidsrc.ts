@@ -341,18 +341,18 @@ export const vidsrcProvider: MovieProvider & {
           episodeNumber: ep,
         });
 
-        if (autoEmbed || vidlinkEmbed || multiEmbed) {
+        if (vidlinkEmbed || autoEmbed || multiEmbed) {
           episodes.push({
             episodeKey: epKey,
             episodeLabel: label,
             episodeTitle: `Tập ${ep}`,
             episodeNumber: ep,
             seasonNumber: s,
-            provider: "vidsrc",
+            provider: "vidlink",
             serverName: "Ban Mai VIP",
             streamType: "embed",
             streamUrl: null,
-            embedUrl: autoEmbed || vidlinkEmbed || multiEmbed,
+            embedUrl: vidlinkEmbed || autoEmbed || multiEmbed,
             quality: "1080p Ultra",
             language: "Phụ đề đa ngôn ngữ",
           });

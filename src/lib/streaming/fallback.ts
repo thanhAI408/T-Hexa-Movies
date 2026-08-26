@@ -295,19 +295,19 @@ export function enrichEpisodesWithFallbacks(
       episodeNumber,
     };
 
-    const autoEmbed = buildAutoEmbed(fallbackParams) || buildMultiEmbed(fallbackParams);
-    if (autoEmbed) {
+    const vidlinkEmbed = buildVidLinkEmbed(fallbackParams) || buildAutoEmbed(fallbackParams);
+    if (vidlinkEmbed) {
       cleanEpisodes.push({
         episodeKey: key,
         episodeLabel: label,
         episodeTitle: sample?.episodeTitle || null,
         episodeNumber,
         seasonNumber,
-        provider: "vidsrc",
+        provider: "vidlink",
         serverName: "Ban Mai VIP",
         streamType: "embed",
         streamUrl: null,
-        embedUrl: autoEmbed,
+        embedUrl: vidlinkEmbed,
         quality: "1080p Ultra",
         language: "Phụ đề đa ngôn ngữ",
       });
