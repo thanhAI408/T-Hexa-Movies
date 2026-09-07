@@ -144,7 +144,6 @@ export default async function WatchPage({ params, searchParams }: Props) {
         {/* Theater Video Player Section */}
         <div className="page-shell py-6 sm:py-8">
           <WatchPlayer
-            key={`${movie}:${selectedEpisode?.seasonNumber}:${selectedEpisode?.serverName}:${selectedEpisode?.episodeKey}`}
             store={store}
             movieSlug={movie}
             movieTitle={movieInfo.title}

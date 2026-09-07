@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Expand, List, Settings, Volume2, VolumeX } f
 import type { MovieDetailView } from "@/types/catalog";
 import { saveWatchHistory, WatchHistoryEntry } from "@/components/home/continue-watching";
 import { buildVidSrcEmbed, buildVidLinkEmbed } from "@/lib/streaming/fallback";
+import { PLAYER_SANDBOX, PLAYER_PERMISSIONS, safePlaybackUrl } from "@/lib/streaming/player-policy";
 
 export default function WatchPage() {
   const params = useParams();
@@ -27,6 +28,7 @@ export default function WatchPage() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [buffered, setBuffered] = useState(0);
+  const [directOnly, setDirectOnly] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -36,10 +38,11 @@ export default function WatchPage() {
 
   // Fetch movie data
   useEffect(() => {
+    const controller = new AbortController();
     async function fetchMovie() {
       try {
         setLoading(true);
-        const response = await fetch(`/api/movie/${slug}`);
+        const response = await fetch(`/api/movie/${encodeURIComponent(slug)}`, { signal: controller.signal });
         if (!response.ok) {
           throw new Error("Movie not found");
         }
@@ -47,11 +50,13 @@ export default function WatchPage() {
         setMovie(data);
         setLoading(false);
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : "Failed to load movie");
         setLoading(false);
       }
     }
     fetchMovie();
+    return () => controller.abort();
   }, [slug]);
 
   const currentEpisodeData = movie?.episodes.find(
@@ -117,8 +122,13 @@ export default function WatchPage() {
       }
     }
 
-    return rawSources;
-  }, [currentEpisodeData, movie, currentEpisode]);
+    return rawSources.flatMap(source => {
+      const streamUrl = safePlaybackUrl(source.streamUrl);
+      const embedUrl = directOnly ? null : safePlaybackUrl(source.embedUrl);
+      if (!streamUrl && !embedUrl) return [];
+      return [{ ...source, streamUrl, embedUrl: streamUrl ? null : embedUrl, streamType: streamUrl ? (source.streamType === "mp4" ? "mp4" as const : "hls" as const) : "embed" as const }];
+    });
+  }, [currentEpisodeData, movie, currentEpisode, directOnly]);
   const rankedSources = useMemo(() => {
     const sorted = [...sources].sort((a, b) => b.priorityScore - a.priorityScore);
     const healthy = sorted.filter((source) => source.health !== "unavailable");
@@ -143,9 +153,11 @@ export default function WatchPage() {
     const url = currentSource.streamUrl ?? currentSource.embedUrl;
     if (!url) return;
 
+    let cancelled = false;
     const initPlayer = async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const HlsLib = (await import("hls.js")).default as any;
+      if (cancelled) return;
       if (currentSource.streamType === "hls" && HlsLib.isSupported()) {
         const hls = new HlsLib({
           enableWorker: true,
@@ -178,6 +190,13 @@ export default function WatchPage() {
     };
 
     initPlayer();
+    return () => {
+      cancelled = true;
+      hlsRef.current?.destroy();
+      hlsRef.current = null;
+      video.removeAttribute("src");
+      video.load();
+    };
   }, [currentSource]);
 
   // Save watch history
@@ -381,17 +400,23 @@ export default function WatchPage() {
       <div className="flex flex-col lg:flex-row">
         {/* Player */}
         <div className="flex-1">
+          <label className="flex gap-2 p-3 text-sm text-white">
+            <input type="checkbox" checked={directOnly} onChange={event => setDirectOnly(event.target.checked)} />
+            Chỉ phát trực tiếp (bỏ chọn để dùng player ngoài có thể chứa quảng cáo)
+          </label>
           <div
             ref={containerRef}
             className="relative aspect-video bg-black"
             onMouseMove={showControlsTemporarily}
             onMouseLeave={() => isPlaying && setShowControls(false)}
           >
-            {isEmbed && embedUrl ? (
+            {!currentSource ? <p className="p-6 text-white">Không có luồng phát trực tiếp phù hợp. Player bên thứ ba đang bị tắt hoặc nguồn không khả dụng.</p> : isEmbed && embedUrl ? (
               <iframe
+                title={movie.title}
                 src={embedUrl}
                 className="h-full w-full border-0"
-                allow="autoplay; fullscreen; picture-in-picture"
+                sandbox={PLAYER_SANDBOX}
+                allow={PLAYER_PERMISSIONS}
                 allowFullScreen
                 referrerPolicy="origin-when-cross-origin"
               />

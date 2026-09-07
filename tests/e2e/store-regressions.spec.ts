@@ -10,6 +10,7 @@ test("player fails over from primary to VidSrc, VidLink, then a Vietnamese backu
   await page.route(/https:\/\/(vidsrc\.me|vidlink\.pro|player\.phimapi\.com|example\.com)\//, route => route.fulfill({ contentType: "text/html", body: "<html><body>Controlled source response</body></html>" }));
   await page.route("**/*.m3u8*", route => route.abort());
   await page.goto("/stores/ban-mai/watch/kkphim~cua-hang-sat-thu-phan-1");
+  await page.getByRole("checkbox", { name: "Chỉ phát trực tiếp" }).uncheck();
   const active = page.locator('[data-playback-source][aria-pressed="true"]');
   await expect(page.locator("iframe").first()).toHaveAttribute("src", /player\.phimapi\.com/);
   await page.locator("iframe").first().dispatchEvent("error");
@@ -91,6 +92,7 @@ test("player loads media and preserves selected episode/server in navigation", a
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto("/stores/ban-mai/watch/kkphim~cua-hang-sat-thu-phan-1");
+  await page.getByRole("checkbox", { name: "Chỉ phát trực tiếp" }).uncheck();
   await expect(page.getByRole("heading", { name: "Cửa Hàng Sát Thủ (Phần 1)", exact: true })).toBeVisible();
   await expect.poll(async () => {
     for (const frame of page.frames()) {
@@ -111,5 +113,6 @@ test("player loads media and preserves selected episode/server in navigation", a
   await expect(episode).toHaveAttribute("href", /server=Vietsub&season=1/);
   await episode.click();
   await expect(page).toHaveURL(/episode=0%3A2.*server=Vietsub/);
+  await expect(page.getByRole("checkbox", { name: "Chỉ phát trực tiếp" })).not.toBeChecked();
   expect(errors).toEqual([]);
 });

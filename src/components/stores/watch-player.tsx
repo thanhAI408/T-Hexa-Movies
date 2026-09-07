@@ -1,7 +1,7 @@
 "use client";
 
 import Hls from "hls.js";
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, useEffectEvent } from "react";
 import {
   AlertCircle,
   RotateCcw,
@@ -14,6 +14,7 @@ import {
   ArrowRightLeft,
 } from "lucide-react";
 import { STORE_API_MAP, type StoreConfig } from "@/lib/stores/config";
+import { PLAYER_SANDBOX, PLAYER_PERMISSIONS, safePlaybackUrl } from "@/lib/streaming/player-policy";
 import type { ProviderId } from "@/types/catalog";
 import {
   type PlaybackSource,
@@ -40,7 +41,20 @@ interface WatchPlayerProps {
   movieType?: string | null;
 }
 
-export function WatchPlayer({
+export function WatchPlayer(props: WatchPlayerProps) {
+  const [directOnly, setDirectOnly] = useState(true);
+  return <div className="space-y-3">
+    <label className="flex items-start gap-3 rounded-xl border p-3 text-sm" style={{ color: props.store.theme.text, borderColor: props.store.theme.border }}>
+      <input type="checkbox" checked={directOnly} onChange={event => setDirectOnly(event.target.checked)} className="mt-1" />
+      <span>Chỉ phát trực tiếp
+        <span className="block text-xs opacity-75">Không tải player bên thứ ba. Bỏ chọn để dùng đủ nguồn dự phòng; các nguồn đó có thể chứa quảng cáo.</span>
+      </span>
+    </label>
+    <PlaybackSession key={`${props.movieSlug}:${props.fallbackSources?.[0]?.id}:${props.seasonNumber}:${props.episodeNumber}:${directOnly}`} {...props} directOnly={directOnly} />
+  </div>;
+}
+
+function PlaybackSession({
   store,
   movieTitle,
   embedUrl,
@@ -54,7 +68,8 @@ export function WatchPlayer({
   seasonNumber,
   episodeNumber,
   movieType,
-}: WatchPlayerProps) {
+  directOnly,
+}: WatchPlayerProps & { directOnly: boolean }) {
   const [activeSourceIndex, setActiveSourceIndex] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,14 +78,15 @@ export function WatchPlayer({
   const failedSources = useRef(new Set<number>());
   const exhaustedSource = useRef<number | null>(null);
   const [vnBackups, setVnBackups] = useState<PlaybackSource[]>([]);
+  const [backupsPending, setBackupsPending] = useState(Boolean(backupSourcesUrl));
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // 1. Build all available playback sources (Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN)
-  const allSources = useMemo<PlaybackSource[]>(() => {
+  const baseSources = useMemo<PlaybackSource[]>(() => {
     if (fallbackSources.length > 0) {
-      return [...fallbackSources, ...vnBackups.filter(source => !fallbackSources.some(existing => (existing.streamUrl || existing.embedUrl) === (source.streamUrl || source.embedUrl)))];
+      return fallbackSources;
     }
 
     const sources: PlaybackSource[] = [];
@@ -146,7 +162,6 @@ export function WatchPlayer({
     return sources;
   }, [
     fallbackSources,
-    vnBackups,
     embedUrl,
     streamUrl,
     quality,
@@ -160,29 +175,45 @@ export function WatchPlayer({
     episodeNumber,
   ]);
 
+  const eligibleSources = useMemo(() => baseSources.flatMap(source => {
+    const streamUrl = safePlaybackUrl(source.streamUrl);
+    const embedUrl = directOnly ? null : safePlaybackUrl(source.embedUrl);
+    if (!streamUrl && !embedUrl) return [];
+    return [{ ...source, streamUrl, embedUrl: streamUrl ? null : embedUrl, streamType: streamUrl ? (source.streamType === "mp4" ? "mp4" as const : "hls" as const) : "embed" as const }];
+  }), [baseSources, directOnly]);
+  const allSources = useMemo(() => [...eligibleSources, ...vnBackups], [eligibleSources, vnBackups]);
+
   const [showFallbacks, setShowFallbacks] = useState(true);
 
   useEffect(() => {
     if (!backupSourcesUrl) return;
     const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 45000);
     fetch(backupSourcesUrl, { signal: controller.signal })
       .then(response => response.ok ? response.json() : null)
       .then(data => {
         if (!data || controller.signal.aborted) return;
-        const sources: PlaybackSource[] = (data.sources || []).filter((source: PlaybackSource) => !fallbackSources.some(existing => (existing.streamUrl || existing.embedUrl) === (source.streamUrl || source.embedUrl)));
+        if (!Array.isArray(data.sources)) return;
+        const sources: PlaybackSource[] = data.sources.flatMap((source: PlaybackSource) => {
+          const streamUrl = safePlaybackUrl(source.streamUrl);
+          const embedUrl = directOnly ? null : safePlaybackUrl(source.embedUrl);
+          if ((!streamUrl && !embedUrl) || eligibleSources.some(existing => (existing.streamUrl || existing.embedUrl) === (streamUrl || embedUrl))) return [];
+          return [{ ...source, streamUrl, embedUrl: streamUrl ? null : embedUrl, streamType: streamUrl ? (source.streamType === "mp4" ? "mp4" as const : "hls" as const) : "embed" as const }];
+        });
         setVnBackups(sources);
         // Continue an exhausted chain when the deferred Vietnamese lookup finishes.
-        if (sources.length && exhaustedSource.current !== null && fallbackSources.length > exhaustedSource.current) {
+        if (sources.length && exhaustedSource.current !== null && eligibleSources.length > exhaustedSource.current) {
           exhaustedSource.current = null;
-          setActiveSourceIndex(fallbackSources.length);
+          setActiveSourceIndex(eligibleSources.length);
           setHasError(false);
           setIsLoading(true);
           setAutoFallbackNotice(`Đã tìm thấy nguồn dự phòng, đang chuyển sang ${sources[0].name}`);
         }
       })
-      .catch(() => { /* Optional backups must not interrupt the primary player. */ });
-    return () => controller.abort();
-  }, [backupSourcesUrl, fallbackSources]);
+      .catch(() => { /* Optional backups must not interrupt the primary player. */ })
+      .finally(() => { window.clearTimeout(timeout); setBackupsPending(false); });
+    return () => { controller.abort(); window.clearTimeout(timeout); };
+  }, [backupSourcesUrl, eligibleSources, directOnly]);
 
   const currentSource = allSources[activeSourceIndex] || allSources[0];
 
@@ -226,6 +257,8 @@ export function WatchPlayer({
     setAutoFallbackNotice(null);
   };
 
+  const handleMediaError = useEffectEvent(() => handleSourceError());
+
   useEffect(() => {
     const video = videoRef.current;
     const url = currentSource?.streamUrl;
@@ -234,13 +267,13 @@ export function WatchPlayer({
       video.src = url;
       return () => { video.removeAttribute("src"); video.load(); };
     }
-    if (!Hls.isSupported()) { handleSourceError(); return; }
+    if (!Hls.isSupported()) { handleMediaError(); return; }
     const hls = new Hls({ maxBufferLength: 30 });
-    hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) handleSourceError(); });
+    hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) handleMediaError(); });
     hls.loadSource(url);
     hls.attachMedia(video);
     return () => hls.destroy();
-  }, [currentSource, handleSourceError, retryKey]);
+  }, [currentSource, retryKey]);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -278,10 +311,10 @@ export function WatchPlayer({
             <AlertCircle size={32} />
           </div>
           <h3 className="text-lg font-bold" style={{ color: store.theme.text }}>
-            Không tìm thấy nguồn phát video
+            {backupsPending ? "Đang tìm nguồn phát trực tiếp" : "Không tìm thấy nguồn phát phù hợp"}
           </h3>
           <p className="text-xs max-w-sm text-slate-400" style={{ color: store.theme.textMuted }}>
-            Tập phim này hiện đang được cập nhật hoặc máy chủ tạm thời không phản hồi. Vui lòng chọn tập hoặc máy chủ khác.
+            {directOnly ? "Player bên thứ ba đang bị tắt. Chỉ các luồng video trực tiếp được phép tải." : "Tập phim này chưa có nguồn khả dụng. Vui lòng chọn tập hoặc máy chủ khác."}
           </p>
         </div>
       </div>
@@ -356,7 +389,8 @@ export function WatchPlayer({
             src={activeEmbedUrl}
             className="h-full w-full border-0"
             allowFullScreen
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            sandbox={PLAYER_SANDBOX}
+            allow={PLAYER_PERMISSIONS}
             referrerPolicy="origin-when-cross-origin"
             style={{ background: "#000000" }}
             onLoad={() => setIsLoading(false)}
@@ -457,6 +491,9 @@ export function WatchPlayer({
       >
         {/* Server Switcher Pill Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={handleSourceError} className="rounded-xl border px-3 py-1.5 text-xs" style={{ color: store.theme.text, borderColor: store.theme.border }}>
+            Nguồn lỗi? Thử nguồn tiếp theo
+          </button>
           <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider mr-1" style={{ color: store.theme.textMuted }}>
             <Server size={14} style={{ color: store.theme.primary }} />
             <span>Máy chủ phát:</span>
