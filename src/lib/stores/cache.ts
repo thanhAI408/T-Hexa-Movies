@@ -1,3 +1,4 @@
+import type { ProviderMovieInput } from "@/types/catalog";
 // Client-side in-memory cache for instant store switching (Zero Delay)
 
 export interface ExploreData {
@@ -20,7 +21,8 @@ export interface ExploreData {
 }
 
 export interface DiscoverResult {
-  items: any[];
+  notice?: string | null;
+  items: ProviderMovieInput[];
   pagination: {
     currentPage: number;
     totalPages: number;
@@ -34,7 +36,7 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
 // In-memory global maps that persist during client session
 const exploreCache = new Map<string, { data: ExploreData; timestamp: number }>();
 const discoverCache = new Map<string, { data: DiscoverResult; timestamp: number }>();
-const heroCache = new Map<string, { data: any; timestamp: number }>();
+const heroCache = new Map<string, { data: ProviderMovieInput; timestamp: number }>();
 const lastStoreFilterState = new Map<string, string>(); // remembers the last query string per store!
 
 // -------------------------------------------------------------
@@ -95,7 +97,7 @@ export function setCachedDiscover(slug: string, queryString: string, data: Disco
 // -------------------------------------------------------------
 // Hero Featured Movie Cache
 // -------------------------------------------------------------
-export function getCachedHero(slug: string): any | null {
+export function getCachedHero(slug: string): ProviderMovieInput | null {
   const entry = heroCache.get(slug);
   if (!entry) return null;
   if (Date.now() - entry.timestamp > CACHE_TTL_MS) {
@@ -105,7 +107,7 @@ export function getCachedHero(slug: string): any | null {
   return entry.data;
 }
 
-export function setCachedHero(slug: string, data: any): void {
+export function setCachedHero(slug: string, data: ProviderMovieInput): void {
   heroCache.set(slug, { data, timestamp: Date.now() });
 }
 
@@ -140,13 +142,14 @@ export async function prefetchStore(slug: string): Promise<void> {
   }
 
   // Prefetch default discover list
-  const defaultQuery = "limit=24&page=1&sort=modified";
+  const defaultQuery = "page=1&limit=24&sort=modified";
   if (!getCachedDiscover(slug, defaultQuery)) {
     fetch(`/api/stores/${slug}/discover?${defaultQuery}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.items) {
           setCachedDiscover(slug, defaultQuery, {
+            notice: data.notice,
             items: data.items,
             pagination: data.pagination || { currentPage: 1, totalPages: 1, totalItems: data.items.length, itemsPerPage: 24 },
           });

@@ -8,11 +8,11 @@ import { StoreProvider } from "@/components/stores/theme-provider";
 import { getMovieDetail } from "@/lib/stores/actions";
 import { WatchPlayer } from "@/components/stores/watch-player";
 import { EpisodeList } from "@/components/stores/episode-list";
-import { buildEpisodePlaybackSources } from "@/lib/streaming/fallback";
+import { buildEpisodePlaybackSources, externalIds } from "@/lib/streaming/fallback";
 
 interface Props {
   params: Promise<{ slug: string; movie: string }>;
-  searchParams: Promise<{ episode?: string }>;
+  searchParams: Promise<{ episode?: string; server?: string; season?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function WatchPage({ params, searchParams }: Props) {
   const { slug, movie } = await params;
-  const { episode: episodeKey } = await searchParams;
+  const { episode: episodeKey, server, season } = await searchParams;
   const store = STORES[slug];
 
   if (!store) {
@@ -59,7 +59,7 @@ export default async function WatchPage({ params, searchParams }: Props) {
 
   // Deduplicate episodes by episodeKey and serverName
   const uniqueEpisodes = episodes.reduce((acc, ep) => {
-    if (!acc.find((e) => e.episodeKey === ep.episodeKey && e.serverName === ep.serverName)) {
+    if (!acc.find((e) => e.episodeKey === ep.episodeKey && e.serverName === ep.serverName && e.seasonNumber === ep.seasonNumber && e.provider === ep.provider)) {
       acc.push(ep);
     }
     return acc;
@@ -67,7 +67,7 @@ export default async function WatchPage({ params, searchParams }: Props) {
 
   // Find selected episode or default to first
   const selectedEpisode = episodeKey
-    ? uniqueEpisodes.find((ep) => ep.episodeKey === episodeKey) || uniqueEpisodes[0]
+    ? uniqueEpisodes.find((ep) => ep.episodeKey === episodeKey && (!server || ep.serverName === server) && (!season || String(ep.seasonNumber ?? 1) === season)) || uniqueEpisodes[0]
     : uniqueEpisodes[0];
 
   // Build all tiered fallback sources (Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN)
@@ -77,8 +77,7 @@ export default async function WatchPage({ params, searchParams }: Props) {
   const embedUrl = selectedEpisode?.embedUrl;
   const streamUrl = selectedEpisode?.streamUrl;
 
-  const tmdbId = movieInfo.externalIds?.tmdbId || (movieInfo.raw?.tmdb as any)?.id ? String((movieInfo.raw?.tmdb as any)?.id) : null;
-  const imdbId = movieInfo.externalIds?.imdbId || (movieInfo.raw?.imdb as any)?.id ? String((movieInfo.raw?.imdb as any)?.id) : null;
+  const { tmdbId, imdbId } = externalIds(movieInfo);
 
   return (
     <StoreProvider store={store}>
@@ -144,6 +143,7 @@ export default async function WatchPage({ params, searchParams }: Props) {
         {/* Theater Video Player Section */}
         <div className="page-shell py-6 sm:py-8">
           <WatchPlayer
+            key={`${movie}:${selectedEpisode?.seasonNumber}:${selectedEpisode?.serverName}:${selectedEpisode?.episodeKey}`}
             store={store}
             movieSlug={movie}
             movieTitle={movieInfo.title}

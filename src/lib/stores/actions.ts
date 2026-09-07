@@ -5,165 +5,39 @@ import { kkphimProvider } from "@/providers/kkphim";
 import { vidsrcProvider } from "@/providers/vidsrc";
 import { vidlinkProvider } from "@/providers/vidlink";
 import { STORE_API_MAP } from "@/lib/stores/config";
-import type { ProviderDetail, ProviderListResult } from "@/types/catalog";
-import type { ProviderListKind } from "@/providers/types";
+import { parseMovieReference } from "./movie-reference";
+import { discoverMovies, discoverQuerySchema } from "./discover";
+import type { ProviderDetail, ProviderId } from "@/types/catalog";
 import { enrichEpisodesWithFallbacks, getRemainingVnProviders } from "@/lib/streaming/fallback";
 
-interface MovieProvider {
-  getMovie(slug: string): Promise<ProviderDetail | null>;
-  getList(kind: ProviderListKind, page?: number, limit?: number): Promise<ProviderListResult>;
-}
+const providers = { vsmov: vsmovProvider, ophim: ophimProvider, nguonc: nguoncProvider, kkphim: kkphimProvider, vidsrc: vidsrcProvider, vidlink: vidlinkProvider };
 
-const PROVIDER_MAP: Record<string, MovieProvider> = {
-  vsmov: vsmovProvider,
-  ophim: ophimProvider,
-  nguonc: nguoncProvider,
-  kkphim: kkphimProvider,
-  vidsrc: vidsrcProvider,
-  vidlink: vidlinkProvider,
-};
-
-export async function getMovieDetail(storeId: string, slug: string): Promise<ProviderDetail | null> {
-  const apiId = STORE_API_MAP[storeId] || storeId;
-  const primaryProvider = PROVIDER_MAP[apiId];
-
-  let detail: ProviderDetail | null = null;
-
-  // 1. Try Primary Provider
-  if (primaryProvider) {
+export async function getMovieDetail(storeId: string, reference: string): Promise<ProviderDetail | null> {
+  const { provider: referencedProvider, slug } = parseMovieReference(reference);
+  const primary = (referencedProvider || STORE_API_MAP[storeId] || storeId) as ProviderId;
+  if (!providers[primary] || !slug) return null;
+  // Explicit source links must never silently resolve a different catalog/movie.
+  // Keep old numeric international links and unqualified Vietnamese links working.
+  const sequence: ProviderId[] = referencedProvider ? [primary] : /^\d+$/.test(slug)
+    ? ["vidsrc", "vidlink"]
+    : [primary, ...getRemainingVnProviders(primary)];
+  for (const id of sequence) {
     try {
-      detail = await primaryProvider.getMovie(slug);
+      const detail = await providers[id].getMovie(slug);
+      if (detail) return enrichEpisodesWithFallbacks(detail, storeId);
     } catch (error) {
-      console.warn(`[Actions] Primary provider (${apiId}) failed for movie ${slug}:`, error);
+      console.warn(`[Movie] ${id}:`, error instanceof Error ? error.message : "Source unavailable");
     }
   }
-
-  // 2. FALLBACK 1: VidSrc (Quốc tế VIP 1 qua TMDB)
-  if (!detail) {
-    try {
-      detail = await vidsrcProvider.getMovie(slug);
-      if (detail) {
-        console.info(`[Actions] Recovered movie ${slug} using Fallback 1 (VidSrc)`);
-      }
-    } catch (e) {
-      // Continue to Fallback 2
-    }
-  }
-
-  // 3. FALLBACK 2: VidLink (Quốc tế VIP 2 qua TMDB)
-  if (!detail) {
-    try {
-      detail = await vidlinkProvider.getMovie(slug);
-      if (detail) {
-        console.info(`[Actions] Recovered movie ${slug} using Fallback 2 (VidLink)`);
-      }
-    } catch (e) {
-      // Continue to Fallback 3
-    }
-  }
-
-  // 4. FALLBACK 3: Remaining Vietnamese Providers (KKPhim, NguonC, VSMov)
-  if (!detail) {
-    const backupProviders = getRemainingVnProviders(apiId);
-    for (const backupId of backupProviders) {
-      const backupProvider = PROVIDER_MAP[backupId];
-      if (!backupProvider) continue;
-
-      try {
-        detail = await backupProvider.getMovie(slug);
-        if (detail) {
-          console.info(`[Actions] Recovered movie ${slug} using Fallback 3 (${backupId})`);
-          break;
-        }
-      } catch {
-        // Continue to next backup
-      }
-    }
-  }
-
-  if (!detail) return null;
-
-  // If TMDB ID is missing, try to resolve it from KKPhim metadata for international embeds
-  if (!detail.movie.externalIds?.tmdbId && !detail.movie.externalIds?.imdbId) {
-    try {
-      const searchTarget = detail.movie.originalTitle || detail.movie.title || slug;
-      const match = await kkphimProvider.search(searchTarget, 1, 3);
-      const found = match.items.find(
-        (m) => m.externalIds?.tmdbId || (m.raw?.tmdb as any)?.id
-      );
-      if (found) {
-        const resolvedTmdb = found.externalIds?.tmdbId || (found.raw?.tmdb as any)?.id ? String((found.raw?.tmdb as any)?.id) : null;
-        const resolvedImdb = found.externalIds?.imdbId || (found.raw?.imdb as any)?.id ? String((found.raw?.imdb as any)?.id) : null;
-        detail.movie.externalIds = {
-          tmdbId: resolvedTmdb,
-          imdbId: resolvedImdb,
-        };
-      }
-    } catch {
-      // Ignore lookup failure
-    }
-  }
-
-  // Enrich with Fallback 1 (VidSrc) and Fallback 2 (VidLink) servers
-  return enrichEpisodesWithFallbacks(detail, storeId);
+  return null;
 }
 
 export async function getRelatedMovies(storeId: string, options?: { limit?: number; excludeSlug?: string; type?: string }) {
-  const apiId = STORE_API_MAP[storeId] || storeId;
-  const primaryProvider = PROVIDER_MAP[apiId];
-  const requestedLimit = options?.limit ?? 12;
-
-  let result: ProviderListResult | null = null;
-
-  // 1. Primary Provider
-  if (primaryProvider) {
-    try {
-      result = await primaryProvider.getList("latest", 1, requestedLimit);
-    } catch (error) {
-      console.warn(`[Actions] Primary provider (${apiId}) failed for related movies:`, error);
-    }
+  try {
+    const result = await discoverMovies(storeId, discoverQuerySchema.parse({ limit: options?.limit ?? 12 }));
+    const excluded = options?.excludeSlug ? parseMovieReference(options.excludeSlug).slug : null;
+    return { ...result, items: result.items.filter(movie => parseMovieReference(movie.providerSlug).slug !== excluded) };
+  } catch {
+    return { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: options?.limit ?? 12 } };
   }
-
-  // 2. Fallback 1: VidSrc
-  if (!result || !result.items || result.items.length === 0) {
-    try {
-      result = await vidsrcProvider.getList("latest", 1, requestedLimit);
-    } catch {
-      // Continue
-    }
-  }
-
-  // 3. Fallback 2: VidLink
-  if (!result || !result.items || result.items.length === 0) {
-    try {
-      result = await vidlinkProvider.getList("latest", 1, requestedLimit);
-    } catch {
-      // Continue
-    }
-  }
-
-  // 4. Fallback 3: VN Providers
-  if (!result || !result.items || result.items.length === 0) {
-    const backupProviders = getRemainingVnProviders(apiId);
-    for (const backupId of backupProviders) {
-      const backupProvider = PROVIDER_MAP[backupId];
-      if (!backupProvider) continue;
-      try {
-        result = await backupProvider.getList("latest", 1, requestedLimit);
-        if (result && result.items && result.items.length > 0) break;
-      } catch {
-        // Continue
-      }
-    }
-  }
-
-  if (!result || !result.items) {
-    return { items: [], pagination: { currentPage: 1, totalPages: 1, totalItems: 0, itemsPerPage: requestedLimit } };
-  }
-
-  const items = options?.excludeSlug
-    ? result.items.filter((m: any) => m.providerSlug !== options.excludeSlug)
-    : result.items;
-
-  return { ...result, items };
 }

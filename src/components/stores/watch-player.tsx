@@ -1,5 +1,6 @@
 "use client";
 
+import Hls from "hls.js";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   AlertCircle,
@@ -14,7 +15,8 @@ import {
   Server,
   ArrowRightLeft,
 } from "lucide-react";
-import type { StoreConfig } from "@/lib/stores/config";
+import { STORE_API_MAP, type StoreConfig } from "@/lib/stores/config";
+import type { ProviderId } from "@/types/catalog";
 import {
   type PlaybackSource,
   buildVidSrcEmbed,
@@ -53,37 +55,14 @@ export function WatchPlayer({
   movieType,
 }: WatchPlayerProps) {
   const [activeSourceIndex, setActiveSourceIndex] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [autoFallbackNotice, setAutoFallbackNotice] = useState<string | null>(null);
-  const [failedSources, setFailedSources] = useState<Set<number>>(new Set());
+  const failedSources = useRef(new Set<number>());
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Install AdBlock Shield on client to intercept any window.open popup attempts
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const originalOpen = window.open;
-    window.open = function (...args) {
-      console.warn("[AdBlock Shield] Prevented ad popup tab:", args);
-      return null;
-    };
-
-    const handleWindowBlur = () => {
-      setTimeout(() => {
-        window.focus();
-      }, 50);
-    };
-
-    window.addEventListener("blur", handleWindowBlur);
-
-    return () => {
-      window.open = originalOpen;
-      window.removeEventListener("blur", handleWindowBlur);
-    };
-  }, []);
 
   // 1. Build all available playback sources (Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN)
   const allSources = useMemo<PlaybackSource[]>(() => {
@@ -99,7 +78,7 @@ export function WatchPlayer({
         id: "primary",
         tier: "primary",
         name: "Nguồn Chính (Gốc)",
-        provider: (store.slug as any) || "kkphim",
+        provider: STORE_API_MAP[store.slug] as ProviderId,
         serverName: `${store.name} VIP`,
         streamType: streamUrl ? "hls" : "embed",
         embedUrl: embedUrl,
@@ -180,27 +159,18 @@ export function WatchPlayer({
   const hasPrimary = allSources.some((s) => s.tier === "primary" || s.tier === "backup_vn");
   const [showFallbacks, setShowFallbacks] = useState(!hasPrimary);
 
-  // Reset states when input URLs or episode changes
-  useEffect(() => {
-    setActiveSourceIndex(0);
-    setIsLoading(true);
-    setHasError(false);
-    setAutoFallbackNotice(null);
-    setFailedSources(new Set());
-    setShowFallbacks(!hasPrimary);
-  }, [embedUrl, streamUrl, episodeNumber, hasPrimary]);
-
   const currentSource = allSources[activeSourceIndex] || allSources[0];
 
   // Auto-failover logic to next tier
   const handleSourceError = useCallback(() => {
+    if (failedSources.current.has(activeSourceIndex)) return;
+    failedSources.current.add(activeSourceIndex);
     setIsLoading(false);
     setShowFallbacks(true);
-    setFailedSources((prev) => new Set([...prev, activeSourceIndex]));
 
     // Find next non-failed source index
     const nextIndex = allSources.findIndex(
-      (_, idx) => idx > activeSourceIndex && !failedSources.has(idx)
+      (_, idx) => idx > activeSourceIndex && !failedSources.current.has(idx)
     );
 
     if (nextIndex !== -1) {
@@ -216,16 +186,43 @@ export function WatchPlayer({
       // All sources exhausted
       setHasError(true);
     }
-  }, [activeSourceIndex, allSources, currentSource, failedSources]);
+  }, [activeSourceIndex, allSources, currentSource]);
 
   // Handle switching source manually
   const switchSource = (index: number) => {
-    if (index === activeSourceIndex) return;
+    failedSources.current.delete(index);
+    setRetryKey(value => value + 1);
     setActiveSourceIndex(index);
     setIsLoading(true);
     setHasError(false);
     setAutoFallbackNotice(null);
   };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const url = currentSource?.streamUrl;
+    if (!video || !url || currentSource?.streamType === "embed") return;
+    if (currentSource?.streamType === "mp4" || video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = url;
+      return () => { video.removeAttribute("src"); video.load(); };
+    }
+    if (!Hls.isSupported()) { handleSourceError(); return; }
+    const hls = new Hls({ maxBufferLength: 30 });
+    hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) handleSourceError(); });
+    hls.loadSource(url);
+    hls.attachMedia(video);
+    return () => hls.destroy();
+  }, [currentSource, handleSourceError, retryKey]);
+
+  useEffect(() => {
+    if (!isLoading) return;
+    const timer = window.setTimeout(() => {
+      setIsLoading(false);
+      setShowFallbacks(true);
+      setAutoFallbackNotice("Nguồn tải lâu. Bạn có thể bấm phát hoặc chọn máy chủ khác bên dưới.");
+    }, 15000);
+    return () => window.clearTimeout(timer);
+  }, [isLoading, activeSourceIndex, retryKey]);
 
   // No sources available at all
   if (!currentSource || (!currentSource.embedUrl && !currentSource.streamUrl)) {
@@ -325,7 +322,8 @@ export function WatchPlayer({
       >
         {activeEmbedUrl ? (
           <iframe
-            key={`iframe-${currentSource.id}-${activeEmbedUrl}`}
+            key={`iframe-${currentSource.id}-${activeEmbedUrl}-${retryKey}`}
+            title={movieTitle}
             ref={iframeRef}
             src={activeEmbedUrl}
             className="h-full w-full border-0"
@@ -338,9 +336,8 @@ export function WatchPlayer({
           />
         ) : activeStreamUrl ? (
           <video
-            key={`video-${currentSource.id}-${activeStreamUrl}`}
+            key={`video-${currentSource.id}-${activeStreamUrl}-${retryKey}`}
             ref={videoRef}
-            src={activeStreamUrl}
             controls
             autoPlay
             className="h-full w-full"
@@ -353,17 +350,10 @@ export function WatchPlayer({
           </video>
         ) : null}
 
-        {/* Anti-watermark overlay */}
-        <div
-          className="absolute bottom-2 right-2 h-8 w-20 cursor-default pointer-events-auto"
-          onClick={(e) => e.preventDefault()}
-          onMouseDown={(e) => e.preventDefault()}
-        />
-
         {/* Loading overlay */}
         {isLoading && (
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center backdrop-blur-md"
+            className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center backdrop-blur-md"
             style={{ background: `${store.theme.background}e6` }}
           >
             <div
@@ -416,7 +406,7 @@ export function WatchPlayer({
               <button
                 type="button"
                 onClick={() => {
-                  setFailedSources(new Set());
+                  failedSources.current.clear();
                   setHasError(false);
                   setIsLoading(true);
                   window.location.reload();

@@ -270,7 +270,7 @@ export function EpisodeList({ store, movieSlug, episodes, currentEpisodeKey }: E
                       return (
                         <Link
                           key={`${serverName}-${episode.episodeKey}`}
-                          href={`/stores/${store.slug}/watch/${movieSlug}?episode=${encodeURIComponent(episode.episodeKey)}`}
+                          href={`/stores/${store.slug}/watch/${movieSlug}?episode=${encodeURIComponent(episode.episodeKey)}&server=${encodeURIComponent(episode.serverName)}&season=${episode.seasonNumber ?? 1}`}
                           className="group relative flex flex-col items-center justify-center rounded-2xl border p-3 text-center transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm"
                           style={{
                             background: isCurrent ? store.theme.gradientAccent : store.theme.surface,
@@ -352,7 +352,7 @@ export function EpisodeList({ store, movieSlug, episodes, currentEpisodeKey }: E
                                 </span>
                               )}
                               <Link
-                                href={`/stores/${store.slug}/watch/${movieSlug}?episode=${encodeURIComponent(episode.episodeKey)}`}
+                                href={`/stores/${store.slug}/watch/${movieSlug}?episode=${encodeURIComponent(episode.episodeKey)}&server=${encodeURIComponent(episode.serverName)}&season=${episode.seasonNumber ?? 1}`}
                                 className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all hover:scale-105"
                                 style={{
                                   background: isCurrent ? store.theme.gradientAccent : store.theme.primaryMuted,

@@ -7,6 +7,7 @@ import {
   Calendar, Sparkles, Play, Clock, TrendingUp, Globe, Check, SlidersHorizontal,
   Layers, RefreshCw, ArrowUpDown
 } from "lucide-react";
+import type { ProviderMovieInput } from "@/types/catalog";
 import type { StoreConfig } from "@/lib/stores/config";
 import {
   getCachedExplore,
@@ -25,12 +26,12 @@ interface StoreExplorerProps {
 const SORT_OPTIONS = [
   { value: "modified", label: "Mới cập nhật", emoji: "✨" },
   { value: "year", label: "Năm mới nhất", emoji: "📅" },
-  { value: "view", label: "Xem nhiều nhất", emoji: "🔥" },
+  { value: "view", label: "Đánh giá (trang này)", emoji: "🔥" },
   { value: "year_asc", label: "Năm cũ nhất", emoji: "⏳" },
-  { value: "title", label: "Tên phim A-Z", emoji: "🔤" },
+  { value: "title", label: "Tên A-Z (trang này)", emoji: "🔤" },
 ];
 
-function cleanPosterUrl(url: any): string | null {
+function cleanPosterUrl(url: unknown): string | null {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -103,7 +104,8 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
+  const pageValue = Number(searchParams.get("page") || 1);
+  const page = Number.isInteger(pageValue) && pageValue > 0 ? pageValue : 1;
   const kind = searchParams.get("kind") || "latest";
   const genre = searchParams.get("genre") || "";
   const country = searchParams.get("country") || "";
@@ -133,11 +135,14 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
 
   // 3. Movies with Instant In-Memory Cache
   const initialDiscover = useMemo(() => getCachedDiscover(store.slug, currentQueryString), [store.slug, currentQueryString]);
-  const [movies, setMovies] = useState<any[]>(initialDiscover?.items || []);
+  const [movies, setMovies] = useState<ProviderMovieInput[]>(initialDiscover?.items || []);
   const [pagination, setPagination] = useState(
     initialDiscover?.pagination || { currentPage: page, totalPages: 1, totalItems: 0, itemsPerPage: 24 }
   );
   const [loadingMovies, setLoadingMovies] = useState(!initialDiscover);
+  const [movieError, setMovieError] = useState<string | null>(null);
+  const [sourceNotice, setSourceNotice] = useState<string | null>(initialDiscover?.notice ?? null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Modal / Drawer state for full taxonomy
   const [activeModal, setActiveModal] = useState<"genre" | "country" | "year" | "all" | null>(null);
@@ -159,26 +164,14 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Sync local query when URL changes
-  useEffect(() => {
-    setLocalQuery(q);
-  }, [q]);
-
   // Fetch explore taxonomy (with cache write & background revalidation)
   useEffect(() => {
-    // Remember last active filter state for this store so returning is instant
-    setLastStoreFilter(store.slug, searchParams.toString());
+
 
     // Prefetch all other 3 stores in background for instant zero-delay switching!
     prefetchAllStores(store.slug);
 
-    const cached = getCachedExplore(store.slug);
-    if (cached) {
-      setExploreData(cached);
-      setLoadingExplore(false);
-    } else {
-      setLoadingExplore(true);
-    }
+    if (getCachedExplore(store.slug)) return;
 
     let isMounted = true;
     async function fetchExplore() {
@@ -205,49 +198,36 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     return () => {
       isMounted = false;
     };
-  }, [store.slug, searchParams]);
-
-  // Fetch movies with Instant Cache & Background Revalidation
-  const fetchMovies = useCallback(async () => {
-    const cached = getCachedDiscover(store.slug, currentQueryString);
-    if (cached) {
-      setMovies(cached.items);
-      setPagination(cached.pagination);
-      setLoadingMovies(false);
-    } else {
-      setLoadingMovies(true);
-    }
-
-    let isMounted = true;
-    try {
-      const response = await fetch(`/api/stores/${store.slug}/discover?${currentQueryString}`);
-      if (response.ok) {
-        const data = await response.json();
-        const items = data.items || [];
-        const pag = data.pagination || { currentPage: page, totalPages: 1, totalItems: items.length, itemsPerPage: 24 };
-        
-        if (isMounted) {
-          setMovies(items);
-          setPagination(pag);
-          setCachedDiscover(store.slug, currentQueryString, { items, pagination: pag });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch movies:", error);
-    } finally {
-      if (isMounted) {
-        setLoadingMovies(false);
-      }
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [store.slug, currentQueryString, page]);
+  }, [store.slug]);
 
   useEffect(() => {
-    fetchMovies();
-  }, [fetchMovies]);
+    setLastStoreFilter(store.slug, searchParams.toString());
+  }, [store.slug, searchParams]);
+
+  // Cancel obsolete requests before they can overwrite a newer filter result.
+  useEffect(() => {
+    const controller = new AbortController();
+    async function loadMovies() {
+      try {
+        const response = await fetch(`/api/stores/${store.slug}/discover?${currentQueryString}`, { signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Không tải được phim. Vui lòng thử lại.");
+        if (controller.signal.aborted) return;
+        setMovies(data.items);
+        setPagination(data.pagination);
+        setSourceNotice(data.notice ?? null);
+        setCachedDiscover(store.slug, currentQueryString, data);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setMovies([]);
+        setMovieError(error instanceof Error ? error.message : "Không tải được phim.");
+      } finally {
+        if (!controller.signal.aborted) setLoadingMovies(false);
+      }
+    }
+    void loadMovies();
+    return () => controller.abort();
+  }, [store.slug, currentQueryString, page, retryCount]);
 
   // Update a single filter in query params
   const updateFilter = useCallback((key: string, value: string, shouldScroll = true) => {
@@ -285,14 +265,14 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
   // Clear all filters back to default
   const clearFilters = useCallback(() => {
     const newParams = new URLSearchParams();
-    if (kind && kind !== "latest") newParams.set("kind", kind);
     newParams.set("page", "1");
     router.push(`${pathname}?${newParams.toString()}`, { scroll: false });
     setLocalQuery("");
-  }, [router, pathname, kind]);
+  }, [router, pathname]);
 
   // Active filters count
   const activeFiltersCount = [
+    kind !== "latest" ? kind : "",
     genre,
     country,
     year,
@@ -331,10 +311,10 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
       return "Phim phát hành cũ nhất";
     }
     if (sort === "view") {
-      return "Phim xem nhiều nhất";
+      return "Đánh giá cao trong trang hiện tại";
     }
     if (sort === "title") {
-      return "Danh sách phim (A - Z)";
+      return "Tên phim A-Z trong trang hiện tại";
     }
 
     return currentCategory?.name || "Mới cập nhật";
@@ -780,7 +760,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               style={{ background: store.theme.primaryMuted, color: store.theme.primary, border: `1px solid ${store.theme.border}` }}
             >
               <Search size={12} />
-              <span>"{q}"</span>
+              <span>&quot;{q}&quot;</span>
               <X size={12} className="opacity-70 group-hover:opacity-100" />
             </button>
           )}
@@ -797,6 +777,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         </div>
       )}
 
+      {sourceNotice && <p role="status" className="rounded-xl border p-3 text-sm" style={{ color: store.theme.textSecondary, borderColor: store.theme.border }}>{sourceNotice}</p>}
       {/* 4. RESULTS HEADER WITH DYNAMIC TITLE */}
       <div className="flex items-center justify-between pt-1">
         <div>
@@ -804,7 +785,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
             {activeTitle}
           </h2>
           <p className="text-xs sm:text-sm font-medium mt-0.5" style={{ color: store.theme.textMuted }}>
-            {loadingMovies && movies.length === 0 ? (
+            {movieError ? <span>Không tải được kết quả</span> : loadingMovies && movies.length === 0 ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 size={13} className="animate-spin" />
                 Đang tìm phim phù hợp...
@@ -812,7 +793,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
             ) : (
               <span>
                 Tìm thấy <strong style={{ color: store.theme.text }}>{pagination.totalItems.toLocaleString()}</strong> phim
-                {q && <span> với từ khóa "<span style={{ color: store.theme.primary }}>{q}</span>"</span>}
+                {q && <span> với từ khóa &quot;<span style={{ color: store.theme.primary }}>{q}</span>&quot;</span>}
               </span>
             )}
           </p>
@@ -826,7 +807,12 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
       </div>
 
       {/* 5. MOVIE GRID / SKELETON */}
-      {loadingMovies && movies.length === 0 ? (
+      {movieError ? (
+        <div role="alert" className="rounded-xl border p-6 text-center" style={{ color: store.theme.text, borderColor: store.theme.border }}>
+          <p>{movieError}</p>
+          <button type="button" onClick={() => { setMovieError(null); setLoadingMovies(true); setRetryCount(value => value + 1); }} className="mt-3 rounded-lg border px-4 py-2">Thử lại</button>
+        </div>
+      ) : loadingMovies && movies.length === 0 ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {[...Array(12)].map((_, i) => (
             <div key={i} className="space-y-2.5">
@@ -839,11 +825,11 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
       ) : movies.length > 0 ? (
         <>
           <div className="grid grid-cols-2 gap-3.5 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-            {movies.map((movie: any) => {
-              const movieSlug = movie.providerSlug || movie.slug;
-              const poster = movie.posterUrl || movie.thumb_url || movie.poster_url;
-              const title = movie.title || movie.name;
-              const quality = movie.quality || (movie.rating ? `⭐ ${movie.rating.toFixed(1)}` : null);
+            {movies.map((movie) => {
+              const movieSlug = movie.providerSlug;
+              const poster = movie.posterUrl;
+              const title = movie.title;
+              const quality = movie.quality;
 
               return (
                 <a
@@ -907,9 +893,9 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                     )}
 
                     {/* Episode label at bottom if available */}
-                    {(movie.episode_current || movie.latestEpisodeLabel) && (
+                    {movie.currentEpisode && (
                       <span className="absolute bottom-2 left-2 right-2 truncate rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-medium text-white/90 text-center backdrop-blur-sm border border-white/10 pointer-events-none">
-                        {movie.episode_current || movie.latestEpisodeLabel}
+                        {movie.currentEpisode}
                       </span>
                     )}
                   </div>
@@ -1280,6 +1266,11 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
   );
 }
 
+function KeyedStoreExplorer(props: StoreExplorerProps) {
+  const params = useSearchParams();
+  return <StoreExplorerContent key={props.store.slug + "?" + params.toString()} {...props} />;
+}
+
 export function StoreExplorer(props: StoreExplorerProps) {
   return (
     <Suspense fallback={
@@ -1290,7 +1281,7 @@ export function StoreExplorer(props: StoreExplorerProps) {
         </p>
       </div>
     }>
-      <StoreExplorerContent {...props} />
+      <KeyedStoreExplorer {...props} />
     </Suspense>
   );
 }
