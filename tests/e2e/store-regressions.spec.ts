@@ -1,5 +1,30 @@
 import { test, expect } from "@playwright/test";
 
+test("player fails over from primary to VidSrc, VidLink, then a Vietnamese backup", async ({ page }) => {
+  let releaseBackups!: () => void;
+  const backupsReady = new Promise<void>(resolve => { releaseBackups = resolve; });
+  await page.route("**/sources?**", async route => {
+    await backupsReady;
+    await route.fulfill({ json: { sources: [{ id: "test-vn", tier: "backup_vn", name: "Nguồn Việt Nam thử nghiệm", provider: "nguonc", serverName: "NguonC", streamType: "embed", embedUrl: "https://example.com/backup-player" }] } });
+  });
+  await page.route(/https:\/\/(vidsrc\.me|vidlink\.pro|player\.phimapi\.com|example\.com)\//, route => route.fulfill({ contentType: "text/html", body: "<html><body>Controlled source response</body></html>" }));
+  await page.route("**/*.m3u8*", route => route.abort());
+  await page.goto("/stores/ban-mai/watch/kkphim~cua-hang-sat-thu-phan-1");
+  const active = page.locator('[data-playback-source][aria-pressed="true"]');
+  await expect(page.locator("iframe").first()).toHaveAttribute("src", /player\.phimapi\.com/);
+  await page.locator("iframe").first().dispatchEvent("error");
+  await expect(active).toHaveAttribute("data-playback-source", "vidsrc");
+  await expect(page.locator("iframe").first()).toHaveAttribute("src", /vidsrc\.me\/embed\/tv\?.*season=1&episode=1/);
+  await page.locator("iframe").first().dispatchEvent("error");
+  await expect(active).toHaveAttribute("data-playback-source", "vidlink");
+  await expect(page.locator("iframe").first()).toHaveAttribute("src", /vidlink\.pro\/tv\/\d+\/1\/1/);
+  await page.locator("iframe").first().dispatchEvent("error");
+  await expect(page.getByRole("heading", { name: "Tín hiệu luồng phát bị gián đoạn" })).toBeVisible();
+  releaseBackups();
+  await expect(active).toHaveAttribute("data-playback-source", "backup_vn");
+  await expect(page.locator("iframe").first()).toHaveAttribute("src", "https://example.com/backup-player");
+});
+
 for (const store of ["binh-minh", "ban-mai", "hoang-hon", "da-nguyet"]) {
   test(`${store}: compound filters and source detail`, async ({ request }) => {
     const response = await request.get(`/api/stores/${store}/discover?kind=series&genre=hanh-dong&country=han-quoc&year=2024`);

@@ -5,8 +5,6 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   AlertCircle,
   RotateCcw,
-  Sparkles,
-  Film,
   Radio,
   Globe,
   Zap,
@@ -23,6 +21,8 @@ import {
   buildVidLinkEmbed,
 } from "@/lib/streaming/fallback";
 
+const EMPTY_SOURCES: PlaybackSource[] = [];
+
 interface WatchPlayerProps {
   store: StoreConfig;
   movieSlug: string;
@@ -32,6 +32,7 @@ interface WatchPlayerProps {
   quality?: string | null;
   language?: string | null;
   fallbackSources?: PlaybackSource[];
+  backupSourcesUrl?: string;
   tmdbId?: string | null;
   imdbId?: string | null;
   seasonNumber?: number | null;
@@ -41,13 +42,13 @@ interface WatchPlayerProps {
 
 export function WatchPlayer({
   store,
-  movieSlug,
   movieTitle,
   embedUrl,
   streamUrl,
   quality,
   language,
-  fallbackSources = [],
+  fallbackSources = EMPTY_SOURCES,
+  backupSourcesUrl,
   tmdbId,
   imdbId,
   seasonNumber,
@@ -60,6 +61,8 @@ export function WatchPlayer({
   const [hasError, setHasError] = useState(false);
   const [autoFallbackNotice, setAutoFallbackNotice] = useState<string | null>(null);
   const failedSources = useRef(new Set<number>());
+  const exhaustedSource = useRef<number | null>(null);
+  const [vnBackups, setVnBackups] = useState<PlaybackSource[]>([]);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -67,7 +70,7 @@ export function WatchPlayer({
   // 1. Build all available playback sources (Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN)
   const allSources = useMemo<PlaybackSource[]>(() => {
     if (fallbackSources.length > 0) {
-      return fallbackSources;
+      return [...fallbackSources, ...vnBackups.filter(source => !fallbackSources.some(existing => (existing.streamUrl || existing.embedUrl) === (source.streamUrl || source.embedUrl)))];
     }
 
     const sources: PlaybackSource[] = [];
@@ -143,6 +146,7 @@ export function WatchPlayer({
     return sources;
   }, [
     fallbackSources,
+    vnBackups,
     embedUrl,
     streamUrl,
     quality,
@@ -156,8 +160,29 @@ export function WatchPlayer({
     episodeNumber,
   ]);
 
-  const hasPrimary = allSources.some((s) => s.tier === "primary" || s.tier === "backup_vn");
-  const [showFallbacks, setShowFallbacks] = useState(!hasPrimary);
+  const [showFallbacks, setShowFallbacks] = useState(true);
+
+  useEffect(() => {
+    if (!backupSourcesUrl) return;
+    const controller = new AbortController();
+    fetch(backupSourcesUrl, { signal: controller.signal })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        if (!data || controller.signal.aborted) return;
+        const sources: PlaybackSource[] = (data.sources || []).filter((source: PlaybackSource) => !fallbackSources.some(existing => (existing.streamUrl || existing.embedUrl) === (source.streamUrl || source.embedUrl)));
+        setVnBackups(sources);
+        // Continue an exhausted chain when the deferred Vietnamese lookup finishes.
+        if (sources.length && exhaustedSource.current !== null && fallbackSources.length > exhaustedSource.current) {
+          exhaustedSource.current = null;
+          setActiveSourceIndex(fallbackSources.length);
+          setHasError(false);
+          setIsLoading(true);
+          setAutoFallbackNotice(`Đã tìm thấy nguồn dự phòng, đang chuyển sang ${sources[0].name}`);
+        }
+      })
+      .catch(() => { /* Optional backups must not interrupt the primary player. */ });
+    return () => controller.abort();
+  }, [backupSourcesUrl, fallbackSources]);
 
   const currentSource = allSources[activeSourceIndex] || allSources[0];
 
@@ -174,6 +199,7 @@ export function WatchPlayer({
     );
 
     if (nextIndex !== -1) {
+      exhaustedSource.current = null;
       const nextSource = allSources[nextIndex];
       const prevSource = currentSource;
       setAutoFallbackNotice(
@@ -184,12 +210,14 @@ export function WatchPlayer({
       setHasError(false);
     } else {
       // All sources exhausted
+      exhaustedSource.current = activeSourceIndex;
       setHasError(true);
     }
   }, [activeSourceIndex, allSources, currentSource]);
 
   // Handle switching source manually
   const switchSource = (index: number) => {
+    exhaustedSource.current = null;
     failedSources.current.delete(index);
     setRetryKey(value => value + 1);
     setActiveSourceIndex(index);
@@ -332,7 +360,7 @@ export function WatchPlayer({
             referrerPolicy="origin-when-cross-origin"
             style={{ background: "#000000" }}
             onLoad={() => setIsLoading(false)}
-            onError={handleSourceError}
+            onErrorCapture={handleSourceError}
           />
         ) : activeStreamUrl ? (
           <video
@@ -444,6 +472,8 @@ export function WatchPlayer({
               <button
                 key={source.id}
                 type="button"
+                data-playback-source={source.tier}
+                aria-pressed={isActive}
                 onClick={() => switchSource(index)}
                 className="group relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95"
                 style={{

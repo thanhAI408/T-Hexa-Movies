@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Play, Settings, Maximize } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { STORES } from "@/lib/stores/config";
 import { StoreProvider } from "@/components/stores/theme-provider";
@@ -9,6 +9,7 @@ import { getMovieDetail } from "@/lib/stores/actions";
 import { WatchPlayer } from "@/components/stores/watch-player";
 import { EpisodeList } from "@/components/stores/episode-list";
 import { buildEpisodePlaybackSources, externalIds } from "@/lib/streaming/fallback";
+import { movieReference } from "@/lib/stores/movie-reference";
 
 interface Props {
   params: Promise<{ slug: string; movie: string }>;
@@ -152,6 +153,7 @@ export default async function WatchPage({ params, searchParams }: Props) {
             quality={selectedEpisode?.quality}
             language={selectedEpisode?.language}
             fallbackSources={playbackSources}
+            backupSourcesUrl={selectedEpisode ? `/api/stores/${slug}/movie/${encodeURIComponent(movieReference(movieInfo.provider, movieInfo.providerSlug))}/sources?${new URLSearchParams({ episode: selectedEpisode.episodeKey, server: selectedEpisode.serverName, season: String(selectedEpisode.seasonNumber ?? 1) })}` : undefined}
             tmdbId={tmdbId}
             imdbId={imdbId}
             seasonNumber={selectedEpisode?.seasonNumber}

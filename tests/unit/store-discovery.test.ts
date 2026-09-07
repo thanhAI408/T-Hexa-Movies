@@ -6,6 +6,10 @@ import { GET } from "@/app/api/stores/[storeId]/discover/route";
 import { getMovieDetail } from "@/lib/stores/actions";
 import { kkphimProvider } from "@/providers/kkphim";
 import { ophimProvider } from "@/providers/ophim";
+import { vidsrcProvider } from "@/providers/vidsrc";
+import { vidlinkProvider } from "@/providers/vidlink";
+import { nguoncProvider } from "@/providers/nguonc";
+import { vsmovProvider } from "@/providers/vsmov";
 
 const json = (body: unknown) => new Response(JSON.stringify(body), { headers: { "content-type": "application/json" } });
 function page(items: object[], currentPage = 1, totalItems = items.length, perPage = 24) {
@@ -20,6 +24,8 @@ describe("production discovery regressions", () => {
     expect(Object.fromEntries(url.searchParams)).toMatchObject({ category: "hanh-dong", country: "han-quoc", year: "2024", sort_field: "year", sort_type: "asc", page: "2" });
   });
   it("preserves every filter and source identity when OPhim fails", async () => {
+    vi.spyOn(vidsrcProvider, "getFilteredList").mockRejectedValue(new Error("offline"));
+    vi.spyOn(vidlinkProvider, "getFilteredList").mockRejectedValue(new Error("offline"));
     const fetcher = vi.fn(async (input: string | URL) => {
       const url = new URL(String(input));
       if (url.hostname === "ophim1.com") return new Response("not found", { status: 404 });
@@ -32,6 +38,7 @@ describe("production discovery regressions", () => {
     expect(result.provider).toBe("kkphim");
     expect(result.notice).toBeTruthy();
     expect(result.items[0].providerSlug).toBe(`kkphim~${movie.slug}`);
+    expect(result.attempts.map(attempt => attempt.provider)).toEqual(["ophim", "vidsrc", "vidlink", "kkphim"]);
   });
   it("keeps valid empty results instead of substituting unrelated movies", async () => {
     const fetcher = vi.fn(async () => json(page([])));
@@ -62,11 +69,12 @@ describe("production discovery regressions", () => {
     expect(response.status).toBe(400);
     expect(fetcher).not.toHaveBeenCalled();
   });
-  it("opens qualified movie references in exactly their originating provider", async () => {
-    const primary = vi.spyOn(ophimProvider, "getMovie");
-    const source = vi.spyOn(kkphimProvider, "getMovie").mockResolvedValue(null);
+  it("starts qualified references at their originating provider and follows the fallback chain", async () => {
+    const calls: string[] = [];
+    for (const provider of [ophimProvider, kkphimProvider, vidsrcProvider, vidlinkProvider, nguoncProvider, vsmovProvider]) {
+      vi.spyOn(provider, "getMovie").mockImplementation(async () => { calls.push(provider.id); return null; });
+    }
     expect(await getMovieDetail("ban-mai", "kkphim~same-slug")).toBeNull();
-    expect(source).toHaveBeenCalledWith("same-slug");
-    expect(primary).not.toHaveBeenCalled();
+    expect(calls).toEqual(["kkphim", "vidsrc", "vidlink", "nguonc", "vsmov", "ophim"]);
   });
 });

@@ -1,5 +1,5 @@
 import type { ProviderDetail, ProviderEpisodeInput, ProviderId, ProviderMovieInput } from "@/types/catalog";
-import { STORE_API_MAP, STORES } from "@/lib/stores/config";
+import { STORE_API_MAP } from "@/lib/stores/config";
 
 export type PlaybackSourceTier = "primary" | "vidsrc" | "vidlink" | "backup_vn";
 export interface PlaybackSource {
@@ -72,7 +72,7 @@ export function buildVidSrcMe(params: FallbackParams): string | null {
   return `https://vidsrc.me/embed/${tv ? "tv" : "movie"}?${tmdb ? `tmdb=${tmdb}` : `imdb=${imdb}`}${tv ? `&season=${season}&episode=${episode}` : ""}`;
 }
 export function buildVidSrcEmbed(params: FallbackParams): string | null {
-  return buildAutoEmbed(params) || buildVidSrcMe(params);
+  return buildVidSrcMe(params);
 }
 export function buildVidLinkEmbed(params: FallbackParams): string | null {
   const { tmdb } = identifiers(params);
@@ -85,6 +85,9 @@ export const ALL_VN_PROVIDERS: ProviderId[] = ["kkphim", "nguonc", "vsmov", "oph
 export function getRemainingVnProviders(current: string): ProviderId[] {
   return ALL_VN_PROVIDERS.filter(provider => provider !== (STORE_API_MAP[current] || current));
 }
+export function getProviderFallbackOrder(primary: ProviderId): ProviderId[] {
+  return [...new Set<ProviderId>([primary, "vidsrc", "vidlink", ...getRemainingVnProviders(primary)])];
+}
 
 export function buildEpisodePlaybackSources(movie: ProviderMovieInput, selected?: ProviderEpisodeInput | null, episodes: ProviderEpisodeInput[] = []): PlaybackSource[] {
   const sources: PlaybackSource[] = [];
@@ -95,34 +98,33 @@ export function buildEpisodePlaybackSources(movie: ProviderMovieInput, selected?
     if (episode.embedUrl) sources.push({ ...common, id: `${id}-embed`, name: `${episode.serverName} · Player`, streamType: "embed", embedUrl: episode.embedUrl });
   };
   if (selected) addEpisode(selected, "primary");
+  const ids = externalIds(movie);
+  const params: FallbackParams = { ...ids, type: movie.type, seasonNumber: ids.season ?? selected?.seasonNumber, episodeNumber: selected?.episodeNumber };
+  // Never fabricate a TV episode when its number is unknown.
+  const builders = [
+    ["VidSrc", "vidsrc", buildVidSrcEmbed],
+    ["VidLink", "vidlink", buildVidLinkEmbed],
+  ] as const;
+  for (const [name, provider, builder] of builders) {
+    if (television(params) && !selected?.episodeNumber) continue;
+    const url = builder(params);
+    if (url && !sources.some(source => source.embedUrl === url)) sources.push({ id: `${name}-${selected?.episodeKey || "full"}`, tier: provider, provider, name, serverName: name, streamType: "embed", embedUrl: url, language: "Phụ đề tùy nguồn", description: "Nguồn quốc tế dự phòng" });
+  }
   for (const episode of episodes) {
     if (!selected || episode.episodeKey !== selected.episodeKey || episode.seasonNumber !== selected.seasonNumber) continue;
     if (episode.serverName === selected.serverName && episode.provider === selected.provider) continue;
     addEpisode(episode, "backup_vn");
   }
-  const ids = externalIds(movie);
-  const params: FallbackParams = { ...ids, type: movie.type, seasonNumber: ids.season ?? selected?.seasonNumber, episodeNumber: selected?.episodeNumber };
-  // Never fabricate a TV episode when its number is unknown.
-  if (television(params) && !selected?.episodeNumber) return sources;
-  const builders = [
-    ["VidLink", "vidlink", buildVidLinkEmbed],
-    ["AutoEmbed", "vidsrc", buildAutoEmbed],
-    ["MultiEmbed", "vidsrc", buildMultiEmbed],
-    ["VidSrc", "vidsrc", buildVidSrcMe],
-  ] as const;
-  for (const [name, provider, builder] of builders) {
-    const url = builder(params);
-    if (url && !sources.some(source => source.embedUrl === url)) sources.push({ id: `${name}-${selected?.episodeKey || "full"}`, tier: provider, provider, name, serverName: name, streamType: "embed", embedUrl: url, language: "Phụ đề tùy nguồn", description: "Nguồn quốc tế dự phòng" });
-  }
-  return sources;
+  return sources.filter((source, index) => sources.findIndex(other => (other.embedUrl || other.streamUrl) === (source.embedUrl || source.streamUrl)) === index);
 }
-export function enrichEpisodesWithFallbacks(detail: ProviderDetail, currentStoreId?: string): ProviderDetail {
+export function enrichEpisodesWithFallbacks(detail: ProviderDetail): ProviderDetail {
   if (detail.episodes.some(episode => episode.embedUrl || episode.streamUrl)) return detail;
   const ids = externalIds(detail.movie);
   const params: FallbackParams = { ...ids, type: detail.movie.type };
   // A known feature film can have a full episode; a series needs real episode metadata.
   if (television(params) !== false) return detail;
-  const embedUrl = buildVidLinkEmbed(params) || buildVidSrcEmbed(params);
+  const embedUrl = buildVidSrcEmbed(params) || buildVidLinkEmbed(params);
   if (!embedUrl) return detail;
-  return { ...detail, episodes: [{ episodeKey: "full", episodeLabel: "Full", episodeTitle: null, episodeNumber: 1, seasonNumber: 1, provider: "vidlink", serverName: STORES[currentStoreId || ""]?.name || "VidLink", streamType: "embed", streamUrl: null, embedUrl, quality: null, language: "Phụ đề tùy nguồn" }] };
+  const provider = buildVidSrcEmbed(params) ? "vidsrc" : "vidlink";
+  return { ...detail, episodes: [{ episodeKey: "full", episodeLabel: "Full", episodeTitle: null, episodeNumber: 1, seasonNumber: 1, provider, serverName: provider === "vidsrc" ? "VidSrc" : "VidLink", streamType: "embed", streamUrl: null, embedUrl, quality: null, language: "Phụ đề tùy nguồn" }] };
 }

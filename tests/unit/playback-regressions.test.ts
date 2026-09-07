@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../../fixtures/kkphim/detail-v1.json";
 import { normalizeKkphimDetail, kkphimDetailResponseSchema } from "@/providers/kkphim";
-import { buildEpisodePlaybackSources, buildVidLinkEmbed, buildAutoEmbed, buildVidSrcMe, externalIds } from "@/lib/streaming/fallback";
+import { buildEpisodePlaybackSources, buildVidLinkEmbed, buildAutoEmbed, buildVidSrcMe, externalIds, getProviderFallbackOrder } from "@/lib/streaming/fallback";
 
 const detail = () => normalizeKkphimDetail(kkphimDetailResponseSchema.parse(fixture));
 describe("playback source regressions", () => {
+  it("orders primary, real VidSrc, VidLink, then Vietnamese backups", () => {
+    const { movie, episodes } = detail();
+    movie.raw = { tmdb: { id: "123", type: "tv" } };
+    const selected = { ...episodes[0], episodeNumber: 2 };
+    const backup = { ...selected, provider: "ophim" as const, serverName: "Other source", streamUrl: null, embedUrl: "https://example.com/backup" };
+    const sources = buildEpisodePlaybackSources(movie, selected, [selected, backup]);
+    expect(sources.map(source => source.tier)).toEqual(["primary", "primary", "vidsrc", "vidlink", "backup_vn"]);
+    expect(sources[2].embedUrl).toContain("https://vidsrc.me/embed/tv?");
+    expect(sources.some(source => /autoembed|multiembed/.test(source.embedUrl || ""))).toBe(false);
+  });
+  it("removes duplicates from the provider fallback chain", () => {
+    expect(getProviderFallbackOrder("ophim")).toEqual(["ophim", "vidsrc", "vidlink", "kkphim", "nguonc", "vsmov"]);
+    expect(getProviderFallbackOrder("vidsrc")).toEqual(["vidsrc", "vidlink", "kkphim", "nguonc", "vsmov", "ophim"]);
+  });
   it("keeps direct HLS and provider iframe as separate usable choices", () => {
     const { movie, episodes } = detail();
     const sources = buildEpisodePlaybackSources(movie, episodes[0], episodes);

@@ -9,6 +9,9 @@ import { normalizeOPhimListResponse } from "@/providers/ophim/normalize";
 import { vsmovProvider, vsmovListResponseSchema, normalizeVsmovList } from "@/providers/vsmov";
 import { nguoncProvider, nguoncListResponseSchema, normalizeNguoncList } from "@/providers/nguonc";
 import type { ProviderListResult, ProviderId } from "@/types/catalog";
+import { vidsrcProvider, UnsupportedInternationalQuery } from "@/providers/vidsrc";
+import { vidlinkProvider } from "@/providers/vidlink";
+import { getProviderFallbackOrder } from "@/lib/streaming/fallback";
 
 const positive = (fallback: number, max: number) => z.preprocess(
   value => value === null || value === undefined || value === "" ? fallback : value,
@@ -101,23 +104,31 @@ export async function discoverMovies(storeId: string, query: DiscoverQuery) {
   const requestedProvider = resolveStoreProvider(storeId);
   if (!requestedProvider) throw new Error("Invalid store");
   let provider = requestedProvider;
-  let result: ProviderListResult;
+  let result: ProviderListResult | undefined;
   const dimensions = [query.kind !== "latest", query.genre, query.country, query.year, query.q].filter(Boolean).length;
-  let notice: string | null = null;
-  // Native path APIs cannot combine filters or globally sort by year.
-  if ((provider === "vsmov" || provider === "nguonc") && (dimensions > 1 || query.genre || query.country || query.year || query.sort.startsWith("year") || query.kind === "cinema")) {
-    provider = "kkphim";
-    notice = "Đang dùng danh mục Dạ Nguyệt để áp dụng đầy đủ bộ lọc.";
+  const attempts: { provider: ProviderId; status: "available" | "unavailable" | "unsupported" }[] = [];
+  for (const candidate of getProviderFallbackOrder(requestedProvider)) {
+    try {
+      if (candidate === "vsmov" || candidate === "nguonc") {
+        if (dimensions > 1 || query.genre || query.country || query.year || query.sort.startsWith("year") || query.kind === "cinema") throw new UnsupportedInternationalQuery("Native source cannot preserve this query");
+        result = await discoverNative(candidate, query);
+      } else if (candidate === "vidsrc" || candidate === "vidlink") {
+        result = await (candidate === "vidsrc" ? vidsrcProvider : vidlinkProvider).getFilteredList(query);
+      } else {
+        result = await discoverCatalog(candidate, query);
+      }
+      attempts.push({ provider: candidate, status: "available" });
+      provider = candidate;
+      break; // A successful empty result is not an outage.
+    } catch (error) {
+      if (error instanceof SearchTooBroadError) throw error;
+      attempts.push({ provider: candidate, status: error instanceof UnsupportedInternationalQuery ? "unsupported" : "unavailable" });
+    }
   }
-  try {
-    result = provider === "ophim" || provider === "kkphim" ? await discoverCatalog(provider, query) : await discoverNative(provider as "vsmov" | "nguonc", query);
-  } catch (error) {
-    if (error instanceof SearchTooBroadError || provider === "kkphim") throw error;
-    provider = "kkphim";
-    result = await discoverCatalog(provider, query);
-    notice = "Nguồn của kho đang gián đoạn. Đang hiển thị phim từ Dạ Nguyệt với cùng bộ lọc.";
-  }
+  if (!result) throw new Error("All catalog sources unavailable for this query");
+  const names = { vsmov: "Bình Minh", ophim: "Ban Mai", nguonc: "Hoàng Hôn", kkphim: "Dạ Nguyệt", vidsrc: "VidSrc", vidlink: "VidLink" };
+  const notice = provider === requestedProvider ? null : `Nguồn chính không khả dụng cho truy vấn này. Đang dùng ${names[provider]} với cùng bộ lọc.${provider === "vidsrc" || provider === "vidlink" ? " Danh mục quốc tế dùng dữ liệu TMDB; khả năng phát tùy phim." : ""}`;
   if (query.sort === "title") result.items.sort((a, b) => a.title.localeCompare(b.title, "vi"));
   if (query.sort === "view") result.items.sort((a, b) => Number((b.raw.tmdb as { vote_average?: number })?.vote_average || 0) - Number((a.raw.tmdb as { vote_average?: number })?.vote_average || 0));
-  return { ...result, provider, requestedProvider, notice, items: result.items.map(movie => ({ ...movie, providerSlug: movieReference(movie.provider, movie.providerSlug) })) };
+  return { ...result, provider, requestedProvider, notice, attempts, items: result.items.map(movie => ({ ...movie, providerSlug: movieReference(movie.provider, movie.providerSlug) })) };
 }
