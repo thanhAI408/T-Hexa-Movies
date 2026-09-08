@@ -132,3 +132,12 @@ export async function discoverMovies(storeId: string, query: DiscoverQuery) {
   if (query.sort === "view") result.items.sort((a, b) => Number((b.raw.tmdb as { vote_average?: number })?.vote_average || 0) - Number((a.raw.tmdb as { vote_average?: number })?.vote_average || 0));
   return { ...result, provider, requestedProvider, notice, attempts, items: result.items.map(movie => ({ ...movie, providerSlug: movieReference(movie.provider, movie.providerSlug) })) };
 }
+
+// Global search must report provenance, not substitute another store's catalog.
+export async function searchStoreCatalog(storeId: string, query: string, page = 1, limit = 24): Promise<ProviderListResult> {
+  const provider = resolveStoreProvider(storeId);
+  const filters = discoverQuerySchema.parse({ q: query, page, limit });
+  if (provider === "kkphim" || provider === "ophim") return discoverCatalog(provider, filters);
+  if (provider === "vsmov" || provider === "nguonc") return discoverNative(provider, filters);
+  throw new Error("Invalid store");
+}
