@@ -77,3 +77,20 @@ test('watch recommendations, theater, share, channel and search filters work', a
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('home reload and refresh rotate videos while load more preserves the pool', async ({ page }) => {
+  const pool = Array.from({ length: 50 }, (_, index) => ({ ...video, id: `vid${String(index).padStart(8, '0')}`, title: `Discovery ${index}` }));
+  await page.route('**/api/youtube?**', route => route.fulfill({ json: { items: pool } }));
+  await page.goto('/youtube');
+  await expect(page.locator('.yt-card')).toHaveCount(24);
+  const first = await page.locator('.yt-card h3').allTextContents();
+  await page.reload(); await expect(page.locator('.yt-card')).toHaveCount(24);
+  const second = await page.locator('.yt-card h3').allTextContents();
+  expect(second.every(title => !first.includes(title))).toBe(true);
+  await page.getByRole('button', { name: 'Tải lại danh sách' }).click();
+  await expect.poll(async () => (await page.locator('.yt-card h3').allTextContents()).filter(title => second.includes(title)).length).toBe(0);
+  await expect(page.locator('.yt-card')).toHaveCount(24);
+  await page.getByRole('button', { name: 'Xem thêm video', exact: true }).click();
+  await expect(page.locator('.yt-card')).toHaveCount(50);
+  expect(new Set(await page.locator('.yt-card h3').allTextContents()).size).toBe(50);
+});

@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       const data = list.parse(await api('videos', { part: 'snippet,statistics,contentDetails', id: p.id! }));
       result = { items: data.items.map(normalize) };
     } else if (p.mode === 'popular') {
-      const data = list.parse(await api('videos', { part: 'snippet,statistics,contentDetails', chart: 'mostPopular', regionCode: 'VN', maxResults: '24', ...(p.category !== '0' ? { videoCategoryId: p.category } : {}), ...page }));
+      const data = list.parse(await api('videos', { part: 'snippet,statistics,contentDetails', chart: 'mostPopular', regionCode: 'VN', maxResults: '50', ...(p.category !== '0' ? { videoCategoryId: p.category } : {}), ...page }));
       result = { items: data.items.map(normalize), nextPageToken: data.nextPageToken };
     } else if (p.mode === 'channel') {
       const channel = list.parse(await api('channels', { part: 'snippet,statistics,contentDetails,brandingSettings', id: p.channel! })).items[0];

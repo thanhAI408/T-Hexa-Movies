@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Play, Home, Clock, History, ArrowLeft, RefreshCw, ExternalLink, Share2, X, Check, Menu, PanelTop, SlidersHorizontal, ThumbsUp, Music2, Gamepad2, Newspaper, GraduationCap, Cpu, Compass } from 'lucide-react';
 import { youtubeId, type YoutubeResult, type YoutubeVideo } from '@/lib/youtube/types';
+import { discoveryBatch } from '@/lib/youtube/discovery';
 import './youtube.css';
 
 const categories = [['0', 'Tất cả'], ['10', 'Âm nhạc'], ['20', 'Trò chơi'], ['24', 'Giải trí'], ['25', 'Tin tức'], ['27', 'Học tập'], ['28', 'Công nghệ'], ['22', 'Đời sống']];
@@ -78,7 +79,7 @@ function YouTubeContent() {
   const saved = library(savedRaw); const history = library(historyRaw);
   const local = tab === 'saved' || tab === 'history';
   const query = new URLSearchParams(id ? { mode: 'video', id } : channel ? { mode: 'channel', channel } : q ? { mode: 'search', q, order, duration: videoDuration } : { mode: 'popular', category }).toString();
-  const [state, setState] = useState<{ key: string; data?: YoutubeResult; error?: string } | null>(null);
+  const [state, setState] = useState<{ key: string; data?: YoutubeResult; pending?: YoutubeVideo[]; error?: string } | null>(null);
   const key = `${query}:${refresh}`; const current = state?.key === key ? state : null;
   const [moreBusy, setMoreBusy] = useState(false);
   useEffect(() => {
@@ -86,7 +87,16 @@ function YouTubeContent() {
     const abort = new AbortController();
     fetch(`/api/youtube?${query}`, { signal: abort.signal }).then(async response => {
       const data = await response.json(); if (!response.ok) throw new Error(data.error);
-      if (!abort.signal.aborted) setState({ key, data });
+      if (!abort.signal.aborted) {
+        if (new URLSearchParams(query).get('mode') === 'popular') {
+          const storageKey = `yt-discovery:${new URLSearchParams(query).get('category') || '0'}`;
+          let previous: string[] = [];
+          try { const value = JSON.parse(sessionStorage.getItem(storageKey) || '[]'); if (Array.isArray(value)) previous = value.filter(id => typeof id === 'string').slice(0, 24); } catch { /* Storage is optional. */ }
+          const batch = discoveryBatch(data.items, previous);
+          try { sessionStorage.setItem(storageKey, JSON.stringify(batch.items.map(video => video.id))); } catch { /* Discovery also works without storage. */ }
+          setState({ key, data: { ...data, items: batch.items }, pending: batch.pending });
+        } else setState({ key, data });
+      }
     }).catch(e => { if (!abort.signal.aborted) setState({ key, error: e.message || 'Không thể tải video.' }); });
     return () => abort.abort();
   }, [query, key, local]);
@@ -102,6 +112,10 @@ function YouTubeContent() {
     setNotice(store('yt-saved', exists ? saved.filter(item => item.id !== video.id) : [video, ...saved]) ? exists ? 'Đã bỏ khỏi Xem sau' : 'Đã lưu vào Xem sau trên thiết bị này' : 'Trình duyệt không cho phép lưu dữ liệu.');
   }
   async function loadMore() {
+    if (current?.pending?.length && current.data) {
+      setState({ ...current, data: { ...current.data, items: [...current.data.items, ...current.pending] }, pending: [] });
+      return;
+    }
     if (!current?.data?.nextPageToken || moreBusy) return;
     setMoreBusy(true);
     try {
@@ -141,7 +155,7 @@ function YouTubeContent() {
         {current?.error && !local && <div role="alert" className="yt-empty"><Play size={36} /><h2>Chưa tải được danh sách video</h2><p>{current.error}</p><button className="yt-pill" onClick={() => setRefresh(v => v + 1)}>Thử lại</button><a className="yt-pill" href={`https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`} target="_blank" rel="noreferrer">Tìm trên YouTube ↗</a></div>}
         <div className={`yt-grid ${q || local ? 'yt-results-list' : ''}`}>{items.map(video => <Card key={video.id} video={video} saved={saved.some(item => item.id === video.id)} onSave={() => toggle(video)} />)}</div>
         {(local || current?.data) && !items.length && <div className="yt-empty"><h2>{local ? 'Danh sách còn trống' : 'Không tìm thấy video'}</h2><p>{local ? 'Khám phá video rồi lưu vào Xem sau để quay lại dễ dàng.' : 'Thử một từ khóa khác hoặc xem danh mục phổ biến.'}</p><Link className="yt-pill" href="/youtube">Khám phá video</Link></div>}
-        {!local && current?.data?.nextPageToken && <button className="yt-pill yt-more" disabled={moreBusy} onClick={loadMore}>{moreBusy ? 'Đang tải…' : 'Xem thêm video'}</button>}
+        {!local && (current?.data?.nextPageToken || !!current?.pending?.length) && <button className="yt-pill yt-more" disabled={moreBusy} onClick={loadMore}>{moreBusy ? 'Đang tải…' : 'Xem thêm video'}</button>}
       </>}
     </main>
     {id && share && <ShareDialog key={id} id={id} close={() => setShare(false)} />}
