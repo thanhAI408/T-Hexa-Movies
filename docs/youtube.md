@@ -29,3 +29,12 @@ Không có key: thông báo danh mục chưa kết nối; vẫn mở iframe khi 
 - `vitest run tests/unit/youtube.test.ts`: kiểm tra tham số, URL video, phân trang, không lộ khóa, lỗi cấu hình/upstream và bình luận.
 - `playwright test tests/e2e/youtube.spec.ts`: giao diện/điều hướng, tìm/sắp xếp, phân trang không trùng, thư viện sau reload, bình luận hiển thị dạng text, mobile và trạng thái thiếu cấu hình.
 - Kiểm tra tìm phim cũ với `tests/e2e/global-search.spec.ts` sau thay đổi header/footer.
+
+## Nâng cấp giao diện tháng 9/2026
+
+- Header gọn, thanh điều hướng thu gọn/mở rộng trên desktop và ngăn kéo trên mobile.
+- Kết quả tìm kiếm dạng hàng ngang, lọc thời lượng, giữ bộ lọc khi đổi thứ tự. Metadata thời lượng/lượt xem được lấy bằng videos.list và giữ đúng thứ tự search.list.
+- Trang xem hai cột với danh sách video phổ biến tiếp theo (không phải đề xuất cá nhân hóa), chế độ rạp hát không thay iframe, hộp thoại chia sẻ hỗ trợ Escape.
+- Ảnh đại diện kênh thật trên thẻ video; trang kênh có ảnh bìa, số đăng ký, số video và mô tả. Lấy video từ playlist uploads của kênh thay vì search.list, có phân trang; ảnh kênh lỗi không làm mất danh sách video.
+- Thích, đăng ký và danh sách phát mở YouTube. Chưa có OAuth, Shorts riêng, thông báo tài khoản hoặc đồng bộ thư viện với Google. Cách phát bằng iframe chính thức giữ nguyên.
+- Kiểm thử bổ sung cho thứ tự hydrate, pagination uploads, lỗi artwork, bộ lọc, hộp chia sẻ và chế độ rạp hát không tải lại trình phát.

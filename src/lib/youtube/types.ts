@@ -1,11 +1,11 @@
 export interface YoutubeVideo {
   id: string; title: string; description: string; thumbnail: string;
   channelId: string; channelTitle: string; publishedAt: string;
-  views?: string; duration?: string;
+  views?: string; duration?: string; channelThumbnail?: string;
 }
 export interface YoutubeResult {
   items: YoutubeVideo[]; nextPageToken?: string;
-  channel?: { title: string; description: string; thumbnail: string; subscribers?: string };
+  channel?: { title: string; description: string; thumbnail: string; subscribers?: string; banner?: string; videoCount?: string; customUrl?: string };
   comments?: { id: string; author: string; text: string; likes: number }[];
 }
 export function youtubeId(input: string): string | null {

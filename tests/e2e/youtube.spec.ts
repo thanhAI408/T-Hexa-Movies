@@ -42,3 +42,38 @@ test('desktop catalog preview uses independent YouTube chrome', async ({ page })
   await expect.poll(() => page.locator('.yt-thumbnail img').first().evaluate(img => (img as HTMLImageElement).naturalWidth), { timeout: 20000 }).toBeGreaterThan(0);
   await page.screenshot({ path: '.data/youtube-desktop.png', fullPage: true });
 });
+
+test('watch recommendations, theater, share, channel and search filters work', async ({ page }) => {
+  const nextVideo = { ...video, id: 'jNQXAC9IVRw', title: 'Video tiếp theo thật' };
+  await page.route('**/api/youtube?**', route => {
+    const query = new URL(route.request().url()).searchParams;
+    return route.fulfill({ json: { items: query.get('mode') === 'popular' ? [video, nextVideo] : [video], ...(query.get('mode') === 'channel' ? { channel: { title: 'Khám phá', description: 'Giới thiệu kênh', thumbnail: '', subscribers: '1200', videoCount: '25' } } : {}) } });
+  });
+  let loads = 0;
+  await page.route('https://www.youtube-nocookie.com/**', route => { loads++; return route.fulfill({ body: '<html>Player</html>', contentType: 'text/html' }); });
+  await page.goto(`/youtube?v=${video.id}`);
+  await expect(page.getByRole('heading', { name: nextVideo.title })).toBeVisible();
+  await expect(page.locator('.yt-next')).not.toContainText(video.title);
+  await expect.poll(() => loads).toBe(1);
+  await page.getByRole('button', { name: 'Chế độ rạp hát', exact: true }).click();
+  await expect(page.locator('.yt-app')).toHaveClass(/yt-theater/);
+  await page.getByRole('button', { name: 'Chế độ mặc định', exact: true }).click();
+  expect(loads).toBe(1);
+  await page.getByRole('button', { name: 'Chia sẻ', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByLabel('Liên kết chia sẻ')).toHaveValue(new RegExp(video.id));
+  await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.screenshot({ path: '.data/youtube-watch.png', fullPage: true });
+  await page.locator('.yt-channel-link').click();
+  await expect(page.locator('.yt-channel-heading')).toContainText('25 video');
+  await expect(page.getByRole('link', { name: 'Đăng ký trên YouTube' })).toHaveAttribute('href', /sub_confirmation=1/);
+  await page.goto('/youtube?q=music');
+  await page.getByRole('button', { name: 'Bộ lọc' }).click();
+  await page.getByLabel('Thời lượng video').selectOption('long');
+  await expect(page).toHaveURL(/duration=long/);
+  await expect(page.locator('.yt-results-list')).toBeVisible();
+  await page.getByLabel('Sắp xếp video').selectOption('date');
+  await expect(page).toHaveURL(/order=date&duration=long/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});

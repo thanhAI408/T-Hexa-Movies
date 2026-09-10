@@ -9,6 +9,7 @@ const schema = z.object({
   page: z.string().regex(/^[\w=-]{1,300}$/).optional(),
   category: z.enum(['0', '10', '20', '22', '24', '25', '27', '28']).default('0'),
   order: z.enum(['relevance', 'date', 'viewCount']).default('relevance'),
+  duration: z.enum(['any', 'short', 'medium', 'long']).default('any'),
 });
 const snippet = z.object({
   title: z.string().default(''), description: z.string().default(''), channelId: z.string().default(''),
@@ -16,8 +17,9 @@ const snippet = z.object({
   thumbnails: z.record(z.string(), z.object({ url: z.string() })).default({}),
 });
 const row = z.object({ id: z.union([z.string(), z.object({ videoId: z.string().optional() })]), snippet,
-  statistics: z.object({ viewCount: z.string().optional(), subscriberCount: z.string().optional() }).optional(),
-  contentDetails: z.object({ duration: z.string().optional() }).optional(),
+  statistics: z.object({ viewCount: z.string().optional(), subscriberCount: z.string().optional(), videoCount: z.string().optional() }).optional(),
+  contentDetails: z.object({ duration: z.string().optional(), relatedPlaylists: z.object({ uploads: z.string() }).optional() }).optional(),
+  brandingSettings: z.object({ image: z.object({ bannerExternalUrl: z.string().optional() }).optional() }).optional(),
 });
 const list = z.object({ items: z.array(row), nextPageToken: z.string().optional() });
 class UpstreamError extends Error { constructor(public status: number) { super('YouTube request failed'); } }
@@ -52,13 +54,35 @@ export async function GET(request: Request) {
     } else if (p.mode === 'popular') {
       const data = list.parse(await api('videos', { part: 'snippet,statistics,contentDetails', chart: 'mostPopular', regionCode: 'VN', maxResults: '24', ...(p.category !== '0' ? { videoCategoryId: p.category } : {}), ...page }));
       result = { items: data.items.map(normalize), nextPageToken: data.nextPageToken };
-    } else {
-      const data = list.parse(await api('search', { part: 'snippet', type: 'video', maxResults: '24', videoEmbeddable: 'true', videoSyndicated: 'true', ...(p.mode === 'channel' ? { channelId: p.channel!, order: 'date' } : { q: p.q, order: p.order, relevanceLanguage: 'vi' }), ...page }));
-      result = { items: data.items.map(normalize).filter(video => /^[\w-]{11}$/.test(video.id)), nextPageToken: data.nextPageToken };
-      if (p.mode === 'channel' && !p.page) {
-        const channel = list.parse(await api('channels', { part: 'snippet,statistics', id: p.channel! })).items[0];
-        if (channel) result.channel = { title: channel.snippet.title, description: channel.snippet.description, thumbnail: thumbnail(channel.snippet), subscribers: channel.statistics?.subscriberCount };
+    } else if (p.mode === 'channel') {
+      const channel = list.parse(await api('channels', { part: 'snippet,statistics,contentDetails,brandingSettings', id: p.channel! })).items[0];
+      result = { items: [] };
+      if (channel) {
+        result.channel = { title: channel.snippet.title, description: channel.snippet.description, thumbnail: thumbnail(channel.snippet), subscribers: channel.statistics?.subscriberCount, videoCount: channel.statistics?.videoCount, banner: channel.brandingSettings?.image?.bannerExternalUrl };
+        const uploads = channel.contentDetails?.relatedPlaylists?.uploads;
+        if (uploads) {
+          const data = z.object({ items: z.array(z.object({ contentDetails: z.object({ videoId: z.string() }) })), nextPageToken: z.string().optional() }).parse(await api('playlistItems', { part: 'contentDetails', playlistId: uploads, maxResults: '24', ...page }));
+          const ids = data.items.map(item => item.contentDetails.videoId);
+          const videos = ids.length ? list.parse(await api('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(',') })).items.map(normalize) : [];
+          result.items = ids.flatMap(id => videos.filter(video => video.id === id));
+          result.nextPageToken = data.nextPageToken;
+        }
       }
+    } else {
+      const data = list.parse(await api('search', { part: 'snippet', type: 'video', maxResults: '24', videoEmbeddable: 'true', videoSyndicated: 'true', q: p.q, order: p.order, videoDuration: p.duration, relevanceLanguage: 'vi', ...page }));
+      result = { items: data.items.map(normalize).filter(video => /^[\w-]{11}$/.test(video.id)), nextPageToken: data.nextPageToken };
+      if (result.items.length) {
+        const details = list.parse(await api('videos', { part: 'snippet,statistics,contentDetails', id: result.items.map(video => video.id).join(',') })).items.map(normalize);
+        result.items = result.items.flatMap(video => details.filter(detail => detail.id === video.id));
+      }
+    }
+    // Channel artwork is optional: an artwork failure must not prevent playback or discovery.
+    if (result.items.length) {
+      try {
+        const ids = [...new Set(result.items.map(video => video.channelId).filter(id => /^UC[\w-]{22}$/.test(id)))];
+        const channels = ids.length ? list.parse(await api('channels', { part: 'snippet', id: ids.join(',') })).items : [];
+        result.items = result.items.map(video => ({ ...video, channelThumbnail: channels.find(channel => channel.id === video.channelId) ? thumbnail(channels.find(channel => channel.id === video.channelId)!.snippet) : undefined }));
+      } catch { /* Keep the video list usable when optional artwork is unavailable. */ }
     }
     return Response.json(result, { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60' } });
   } catch (error) {
