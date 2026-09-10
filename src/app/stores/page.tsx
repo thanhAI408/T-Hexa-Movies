@@ -46,6 +46,7 @@ export default function StoresPage() {
         </div>
       </div>
 
+      <div className="page-shell relative z-10 mb-8"><Link href="/youtube" className="flex items-center justify-between gap-4 rounded-2xl border border-red-500/25 bg-red-500/10 px-6 py-5 text-white hover:bg-red-500/20"><div><h2 className="text-xl font-bold">▶ Khám phá YouTube</h2><p className="mt-1 text-sm text-white/60">Video, âm nhạc, trò chơi và những điều bạn yêu thích.</p></div><ArrowRight className="shrink-0" /></Link></div>
       {/* 4 Portals Grid */}
       <div className="page-shell relative z-10 pb-24">
         <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">

@@ -1,7 +1,11 @@
+"use client";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Sparkles, Film, Heart } from "lucide-react";
 
 export function SiteFooter() {
+  const pathname = usePathname();
+  if (pathname === "/youtube" || pathname.startsWith("/youtube/")) return null;
   return (
     <footer className="relative border-t border-white/10 bg-[#040711] text-slate-400">
       <div className="page-shell py-12">

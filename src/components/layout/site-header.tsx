@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -9,6 +10,7 @@ import { SearchCommand } from "@/components/search/search-command";
 
 export const PRIMARY_NAV = [
   { href: "/stores", label: "Kho phim" },
+  { href: "/youtube", label: "YouTube ▶" },
   { href: "/stores/binh-minh", label: "Bình Minh 🌅" },
   { href: "/stores/ban-mai", label: "Ban Mai ☀️" },
   { href: "/stores/hoang-hon", label: "Hoàng Hôn 🌆" },
@@ -16,6 +18,8 @@ export const PRIMARY_NAV = [
 ] as const;
 
 export function SiteHeader() {
+  const pathname = usePathname();
+  if (pathname === "/youtube" || pathname.startsWith("/youtube/")) return null;
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-[#060912]/80 backdrop-blur-2xl">
       <div className="page-shell flex h-[68px] items-center gap-6">
