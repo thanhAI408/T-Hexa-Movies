@@ -74,21 +74,21 @@ function SearchContent() {
     return () => controller.abort();
   }, [query, retry]);
   return <div className="page-shell py-8">
-    <h1 className="mb-2 text-2xl font-bold text-white">Tìm phim trong cả bốn kho</h1>
-    <p className="mb-6 text-sm text-white/55">Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt. Một phim có thể xuất hiện ở nhiều nguồn để bạn lựa chọn.</p>
+    <h1 className="mb-2 text-2xl font-bold text-white">Tìm phim trong cả sáu nguồn</h1>
+    <p className="mb-6 text-sm text-white/55">Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt · VidSrc · VidLink. Một phim có thể xuất hiện ở nhiều nguồn để bạn lựa chọn.</p>
     <form className="mb-8 flex gap-2" onSubmit={event => {
       event.preventDefault(); const value = String(new FormData(event.currentTarget).get("q") || "").trim();
       if (value) router.push(`/tim-kiem?q=${encodeURIComponent(value)}`);
     }}>
-      <input key={query} type="search" name="q" aria-label="Tên phim tìm trong bốn kho" maxLength={150} defaultValue={query} placeholder="Nhập tên phim bạn muốn tìm..."
+      <input key={query} type="search" name="q" aria-label="Tên phim tìm trong sáu nguồn" maxLength={150} defaultValue={query} placeholder="Nhập tên phim bạn muốn tìm..."
         className="h-12 min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-5 text-white outline-none focus:border-sky-400" />
       <button type="submit" className="rounded-full bg-sky-400 px-4 font-semibold text-slate-950">Tìm kiếm</button>
     </form>
     {!query ? <p className="py-12 text-center text-white/55"><Search className="mx-auto mb-3" />Nhập tên phim để xem kho nào đang có.</p> : currentError ?
       <div role="alert" className="py-10 text-center text-amber-200">{currentError}<button type="button" className="ml-3 underline" onClick={() => { setError(null); setResult(null); setRetry(value => value + 1); }}>Thử lại</button></div> : !current ?
-      <p role="status" className="flex items-center justify-center gap-3 py-12 text-white/60"><Loader2 className="animate-spin" />Đang tìm “{query}” trong cả bốn kho…</p> : <>
-        <p className="mb-5 text-sm text-white/65">Kết quả cho “{query}” · {current.groups.filter(group => group.items.length > 0).length}/4 kho có kết quả.</p>
-        {current.partial && <p role="status" className="mb-5 rounded-xl border border-amber-300/20 p-3 text-sm text-amber-200">Một số nguồn đang gián đoạn; chưa thể kết luận phim không có tại những kho đó.</p>}
+      <p role="status" className="flex items-center justify-center gap-3 py-12 text-white/60"><Loader2 className="animate-spin" />Đang tìm “{query}” trong cả sáu nguồn…</p> : <>
+        <p className="mb-5 text-sm text-white/65">Kết quả cho “{query}” · {current.groups.filter(group => group.items.length > 0).length}/{current.groups.length} nguồn có kết quả.</p>
+        {current.partial && <p role="status" className="mb-5 rounded-xl border border-amber-300/20 p-3 text-sm text-amber-200">Một số nguồn đang gián đoạn; chưa thể kết luận phim không có tại những nguồn đó.</p>}
         {[...current.groups].sort((a, b) => Number(a.status === "unavailable") - Number(b.status === "unavailable")).map(group => <StoreResults key={`${query}:${retry}:${group.storeId}`} initial={group} query={query} onUpdate={updated => setResult(previous => {
           if (!previous || previous.query !== query) return previous;
           const groups = previous.groups.map(item => item.storeId === updated.storeId ? updated : item);

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const stores = [["binh-minh", "Bình Minh", "vsmov"], ["ban-mai", "Ban Mai", "ophim"], ["hoang-hon", "Hoàng Hôn", "nguonc"], ["da-nguyet", "Dạ Nguyệt", "kkphim"]];
+const stores = [["binh-minh", "Bình Minh", "vsmov"], ["ban-mai", "Ban Mai", "ophim"], ["hoang-hon", "Hoàng Hôn", "nguonc"], ["da-nguyet", "Dạ Nguyệt", "kkphim"], ["vidsrc", "VidSrc", "vidsrc"], ["vidlink", "VidLink", "vidlink"]];
 
 test("live global search preserves provider identity through the movie detail link", async ({ page, request }) => {
   const errors: string[] = [];
@@ -27,7 +27,7 @@ function response(q: string, only?: string | null, page = 1, failed?: string) {
   return { query: q, partial: Boolean(failed), groups: stores.filter(([id]) => !only || id === only).map(([storeId, storeName, provider]) => ({
     storeId, storeName, provider, status: failed === storeId ? "unavailable" : "available",
     pagination: failed === storeId ? null : { currentPage: page, totalPages: 2, totalItems: 2, itemsPerPage: 1 },
-    items: failed === storeId ? [] : [{ id: `${provider}~film-${page}`, title: `${q} ${page}`, originalTitle: null, posterUrl: null, year: 2024, quality: "HD", storeId, storeName, href: `/stores/${storeId}/movie/${provider}~film-${page}` }],
+    items: failed === storeId ? [] : [{ id: `${provider}~film-${page}`, title: `${q} ${page}`, originalTitle: null, posterUrl: null, year: 2024, quality: "HD", storeId, storeName, href: `/stores/${storeId.startsWith("vid") ? "ban-mai" : storeId}/movie/${provider}~film-${page}` }],
   })) };
 }
 
@@ -42,7 +42,7 @@ test("home search labels every store and View all never follows a hovered sugges
   await expect(page).toHaveURL(/\/tim-kiem\?q=/);
   for (const [id, name, provider] of stores) {
     const group = page.getByRole("region", { name: `Kết quả ${name}` });
-    await expect(group.getByRole("link")).toHaveAttribute("href", `/stores/${id}/movie/${provider}~film-1`);
+    await expect(group.getByRole("link")).toHaveAttribute("href", `/stores/${id.startsWith("vid") ? "ban-mai" : id}/movie/${provider}~film-1`);
     await expect(group.getByText(`Nguồn ${name}`, { exact: true })).toBeVisible();
   }
 });
@@ -59,7 +59,7 @@ test("per-store pagination preserves other results and reports a failed source",
   await expect(page.getByRole("region", { name: "Kết quả Bình Minh" }).getByRole("link")).toHaveCount(2);
   await expect(page.getByRole("region", { name: "Kết quả Hoàng Hôn" }).getByRole("link")).toHaveCount(1);
   await page.getByRole("button", { name: "Thử lại nguồn này", exact: true }).click();
-  await expect(page.getByText(/4\/4 kho có kết quả/)).toBeVisible();
+  await expect(page.getByText(/6\/6 nguồn có kết quả/)).toBeVisible();
   await expect(page.getByText("Một số nguồn đang gián đoạn", { exact: false })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
@@ -84,4 +84,20 @@ test("stale autocomplete responses cannot replace a newer query", async ({ page 
   await expect(page.getByRole("option").first()).toContainText("New");
   await input.press("Enter");
   await expect(page).toHaveURL(/\/tim-kiem\?q=New$/);
+});
+
+
+test("international results open the correct provider detail", async ({ request }) => {
+  const response = await request.get("/api/search/all?q=Inception");
+  expect(response.ok()).toBe(true);
+  const payload = await response.json();
+  for (const provider of ["vidsrc", "vidlink"]) {
+    const group = payload.groups.find((item: { storeId: string }) => item.storeId === provider);
+    expect(group.status).toBe("available");
+    const movie = group.items.find((item: { id: string }) => item.id === `${provider}~movie-27205`);
+    expect(movie).toBeTruthy();
+    const detail = await request.get(`/api${movie.href}`);
+    expect(detail.ok()).toBe(true);
+    expect((await detail.json()).movie).toMatchObject({ provider, providerSlug: "movie-27205" });
+  }
 });

@@ -46,7 +46,7 @@ export function SearchCommand({ autoFocus = false }: { autoFocus?: boolean }) {
     <div className="search-wrapper">
       <input ref={inputRef} type="search" role="combobox" aria-label="Tìm phim" aria-controls={visible ? listboxId : undefined}
         aria-expanded={visible} aria-autocomplete="list" aria-activedescendant={visible && activeIndex >= 0 && items[activeIndex] ? `${listboxId}-${activeIndex}` : undefined}
-        autoComplete="off" maxLength={150} placeholder="Tìm tên phim trong cả 4 kho..." value={query}
+        autoComplete="off" maxLength={150} placeholder="Tìm tên phim trong cả 6 nguồn..." value={query}
         onChange={event => { setQuery(event.target.value); if (event.target.value.trim() !== trimmed) { setResult(null); setError(null); } setActiveIndex(-1); setOpen(true); }}
         onFocus={() => setOpen(true)} onBlur={() => setOpen(false)}
         onKeyDown={event => {
@@ -63,7 +63,7 @@ export function SearchCommand({ autoFocus = false }: { autoFocus?: boolean }) {
       </div>
     </div>
     {visible && <div className="glass-panel absolute inset-x-0 top-[calc(100%+12px)] z-[70] max-h-[70vh] overflow-y-auto rounded-2xl p-2">
-      <p className="px-3 py-2 text-xs text-sky-300">Tìm trong Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt</p>
+      <p className="px-3 py-2 text-xs text-sky-300">Tìm trong Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt · VidSrc · VidLink</p>
       <div id={listboxId} role="listbox" aria-label="Phim ở các kho">
         {items.map((item, index) => <button key={item.id} id={`${listboxId}-${index}`} type="button" role="option" aria-selected={index === activeIndex}
           className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left ${index === activeIndex ? "bg-sky-400/15" : "hover:bg-white/10"}`}
@@ -73,10 +73,10 @@ export function SearchCommand({ autoFocus = false }: { autoFocus?: boolean }) {
             <span className="block text-xs text-white/50">{item.year || ""}</span><span className="text-xs font-semibold text-sky-300">Nguồn {item.storeName}</span></span>
         </button>)}
       </div>
-      {loading && <p role="status" className="p-3 text-sm text-white/60">Đang tìm cả bốn kho…</p>}
+      {loading && <p role="status" className="p-3 text-sm text-white/60">Đang tìm cả sáu nguồn…</p>}
       {error && <p role="alert" className="p-3 text-sm text-amber-200">{error}</p>}
       {current?.partial && <p className="p-3 text-xs text-amber-200">Chưa kiểm tra được: {current.groups.filter(group => group.status === "unavailable").map(group => group.storeName).join(", ")}.</p>}
-      {current && !items.length && !current.partial && <p className="p-3 text-sm text-white/60">Không tìm thấy phim phù hợp trong cả bốn kho.</p>}
+      {current && !items.length && !current.partial && <p className="p-3 text-sm text-white/60">Không tìm thấy phim phù hợp trong cả sáu nguồn.</p>}
       <button type="button" onMouseDown={event => event.preventDefault()} onClick={() => navigate(allHref)} className="w-full rounded-xl p-3 text-sm font-semibold text-sky-300 hover:bg-white/10">
         Xem tất cả kết quả cho “{trimmed}”
       </button>
