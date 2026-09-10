@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles, Play, Star, Clock, Film, Compass, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, Sparkles, Play, Music2, Gamepad2, Film, Compass, ShieldCheck, Zap } from "lucide-react";
 import { STORE_LIST } from "@/lib/stores/config";
 
 export default function StoresPage() {
@@ -46,7 +46,23 @@ export default function StoresPage() {
         </div>
       </div>
 
-      <div className="page-shell relative z-10 mb-8"><Link href="/youtube" className="flex items-center justify-between gap-4 rounded-2xl border border-red-500/25 bg-red-500/10 px-6 py-5 text-white hover:bg-red-500/20"><div><h2 className="text-xl font-bold">▶ Khám phá YouTube</h2><p className="mt-1 text-sm text-white/60">Video, âm nhạc, trò chơi và những điều bạn yêu thích.</p></div><ArrowRight className="shrink-0" /></Link></div>
+      <div className="page-shell relative z-10 mb-8">
+        <Link href="/youtube" className="youtube-portal" aria-label="Khám phá YouTube">
+          <div className="youtube-portal-copy">
+            <span className="youtube-portal-kicker"><span className="youtube-portal-logo"><Play size={16} fill="currentColor" /></span> YOUTUBE TRÊN T-HEXA</span>
+            <h2>Một cú chạm.<br /><span>Cả thế giới mở ra.</span></h2>
+            <p>Từ giai điệu yêu thích đến những khám phá bất ngờ.<br className="hidden sm:block" /> Tìm và xem video ngay trong không gian của bạn.</p>
+            <span className="youtube-portal-cta">Khám phá YouTube <ArrowRight size={19} /></span>
+          </div>
+          <div className="youtube-portal-art" aria-hidden="true">
+            <div className="youtube-portal-orbit" />
+            <div className="youtube-portal-tile youtube-portal-music"><Music2 size={24} /><span>Âm nhạc</span><div className="youtube-equalizer">{Array.from({ length: 9 }, (_, index) => <i key={index} style={{ height: `${18 + (index * 17 % 43)}px`, animationDelay: `${index * 90}ms` }} />)}</div></div>
+            <div className="youtube-portal-tile youtube-portal-gaming"><Gamepad2 size={28} /><span>Trò chơi & khám phá</span></div>
+            <div className="youtube-portal-play"><Play size={42} fill="currentColor" /></div>
+            <span className="youtube-portal-caption"><Sparkles size={14} /> Luôn có điều mới để xem</span>
+          </div>
+        </Link>
+      </div>
       {/* 4 Portals Grid */}
       <div className="page-shell relative z-10 pb-24">
         <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-4">
