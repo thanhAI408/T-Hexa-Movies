@@ -121,9 +121,9 @@ function PlaybackSession({
       sources.push({
         id: "vidsrc",
         tier: "vidsrc",
-        name: "Fallback 1: VidSrc",
+        name: "Dự phòng 1: Tinh Tú",
         provider: "vidsrc",
-        serverName: "VidSrc VIP (Quốc Tế 1)",
+        serverName: "Tinh Tú (Quốc tế 1)",
         streamType: "embed",
         embedUrl: vidsrcUrl,
         streamUrl: null,
@@ -146,9 +146,9 @@ function PlaybackSession({
       sources.push({
         id: "vidlink",
         tier: "vidlink",
-        name: "Fallback 2: VidLink",
+        name: "Dự phòng 2: Ngân Hà",
         provider: "vidlink",
-        serverName: "VidLink VIP (Quốc Tế 2)",
+        serverName: "Ngân Hà (Quốc tế 2)",
         streamType: "embed",
         embedUrl: vidlinkUrl,
         streamUrl: null,

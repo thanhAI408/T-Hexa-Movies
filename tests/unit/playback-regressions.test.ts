@@ -50,6 +50,6 @@ describe("playback source regressions", () => {
     const wrongSeason = { ...selected, seasonNumber: 1, serverName: "Wrong season", embedUrl: "https://example.com/wrong" };
     const sources = buildEpisodePlaybackSources(movie, selected, [selected, wrongSeason]);
     expect(sources.some(source => source.serverName === "Wrong season")).toBe(false);
-    expect(sources.find(source => source.name === "VidLink")?.embedUrl).toContain("/3/2?");
+    expect(sources.find(source => source.name === "Ngân Hà")?.embedUrl).toContain("/3/2?");
   });
 });

@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const stores = [["binh-minh", "Bình Minh", "vsmov"], ["ban-mai", "Ban Mai", "ophim"], ["hoang-hon", "Hoàng Hôn", "nguonc"], ["da-nguyet", "Dạ Nguyệt", "kkphim"], ["vidsrc", "VidSrc", "vidsrc"], ["vidlink", "VidLink", "vidlink"]];
+const stores = [["binh-minh", "Bình Minh", "vsmov"], ["ban-mai", "Ban Mai", "ophim"], ["hoang-hon", "Hoàng Hôn", "nguonc"], ["da-nguyet", "Dạ Nguyệt", "kkphim"], ["vidsrc", "Tinh Tú", "vidsrc"], ["vidlink", "Ngân Hà", "vidlink"]];
 
 test("live global search preserves provider identity through the movie detail link", async ({ page, request }) => {
   const errors: string[] = [];

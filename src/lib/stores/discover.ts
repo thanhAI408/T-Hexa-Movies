@@ -126,7 +126,7 @@ export async function discoverMovies(storeId: string, query: DiscoverQuery) {
     }
   }
   if (!result) throw new Error("All catalog sources unavailable for this query");
-  const names = { vsmov: "Bình Minh", ophim: "Ban Mai", nguonc: "Hoàng Hôn", kkphim: "Dạ Nguyệt", vidsrc: "VidSrc", vidlink: "VidLink" };
+  const names = { vsmov: "Bình Minh", ophim: "Ban Mai", nguonc: "Hoàng Hôn", kkphim: "Dạ Nguyệt", vidsrc: "Tinh Tú", vidlink: "Ngân Hà" };
   const notice = provider === requestedProvider ? null : `Nguồn chính không khả dụng cho truy vấn này. Đang dùng ${names[provider]} với cùng bộ lọc.${provider === "vidsrc" || provider === "vidlink" ? " Danh mục quốc tế dùng dữ liệu TMDB; khả năng phát tùy phim." : ""}`;
   if (query.sort === "title") result.items.sort((a, b) => a.title.localeCompare(b.title, "vi"));
   if (query.sort === "view") result.items.sort((a, b) => Number((b.raw.tmdb as { vote_average?: number })?.vote_average || 0) - Number((a.raw.tmdb as { vote_average?: number })?.vote_average || 0));

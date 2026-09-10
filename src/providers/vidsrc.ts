@@ -57,7 +57,7 @@ function normalize(item: TmdbItem, provider: "vidsrc" | "vidlink", mediaType: "m
 }
 
 export function createInternationalProvider(provider: "vidsrc" | "vidlink"): MovieProvider & { getFilteredList(filters: InternationalFilters): Promise<ProviderListResult> } {
-  const name = provider === "vidsrc" ? "VidSrc" : "VidLink";
+  const name = provider === "vidsrc" ? "Tinh Tú" : "Ngân Hà";
   const builder = provider === "vidsrc" ? buildVidSrcEmbed : buildVidLinkEmbed;
   return {
     id: provider, displayName: `${name} Quốc Tế`, baseUrl: provider === "vidsrc" ? "https://vidsrc.me" : "https://vidlink.pro",

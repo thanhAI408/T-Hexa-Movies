@@ -102,8 +102,8 @@ export function buildEpisodePlaybackSources(movie: ProviderMovieInput, selected?
   const params: FallbackParams = { ...ids, type: movie.type, seasonNumber: ids.season ?? selected?.seasonNumber, episodeNumber: selected?.episodeNumber };
   // Never fabricate a TV episode when its number is unknown.
   const builders = [
-    ["VidSrc", "vidsrc", buildVidSrcEmbed],
-    ["VidLink", "vidlink", buildVidLinkEmbed],
+    ["Tinh Tú", "vidsrc", buildVidSrcEmbed],
+    ["Ngân Hà", "vidlink", buildVidLinkEmbed],
   ] as const;
   for (const [name, provider, builder] of builders) {
     if (television(params) && !selected?.episodeNumber) continue;
@@ -126,5 +126,5 @@ export function enrichEpisodesWithFallbacks(detail: ProviderDetail): ProviderDet
   const embedUrl = buildVidSrcEmbed(params) || buildVidLinkEmbed(params);
   if (!embedUrl) return detail;
   const provider = buildVidSrcEmbed(params) ? "vidsrc" : "vidlink";
-  return { ...detail, episodes: [{ episodeKey: "full", episodeLabel: "Full", episodeTitle: null, episodeNumber: 1, seasonNumber: 1, provider, serverName: provider === "vidsrc" ? "VidSrc" : "VidLink", streamType: "embed", streamUrl: null, embedUrl, quality: null, language: "Phụ đề tùy nguồn" }] };
+  return { ...detail, episodes: [{ episodeKey: "full", episodeLabel: "Full", episodeTitle: null, episodeNumber: 1, seasonNumber: 1, provider, serverName: provider === "vidsrc" ? "Tinh Tú" : "Ngân Hà", streamType: "embed", streamUrl: null, embedUrl, quality: null, language: "Phụ đề tùy nguồn" }] };
 }

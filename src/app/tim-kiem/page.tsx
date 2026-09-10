@@ -75,7 +75,7 @@ function SearchContent() {
   }, [query, retry]);
   return <div className="page-shell py-8">
     <h1 className="mb-2 text-2xl font-bold text-white">Tìm phim trong cả sáu nguồn</h1>
-    <p className="mb-6 text-sm text-white/55">Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt · VidSrc · VidLink. Một phim có thể xuất hiện ở nhiều nguồn để bạn lựa chọn.</p>
+    <p className="mb-6 text-sm text-white/55">Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt · Tinh Tú · Ngân Hà. Một phim có thể xuất hiện ở nhiều nguồn để bạn lựa chọn.</p>
     <form className="mb-8 flex gap-2" onSubmit={event => {
       event.preventDefault(); const value = String(new FormData(event.currentTarget).get("q") || "").trim();
       if (value) router.push(`/tim-kiem?q=${encodeURIComponent(value)}`);

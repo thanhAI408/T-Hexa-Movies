@@ -63,7 +63,7 @@ export function SearchCommand({ autoFocus = false }: { autoFocus?: boolean }) {
       </div>
     </div>
     {visible && <div className="glass-panel absolute inset-x-0 top-[calc(100%+12px)] z-[70] max-h-[70vh] overflow-y-auto rounded-2xl p-2">
-      <p className="px-3 py-2 text-xs text-sky-300">Tìm trong Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt · VidSrc · VidLink</p>
+      <p className="px-3 py-2 text-xs text-sky-300">Tìm trong Bình Minh · Ban Mai · Hoàng Hôn · Dạ Nguyệt · Tinh Tú · Ngân Hà</p>
       <div id={listboxId} role="listbox" aria-label="Phim ở các kho">
         {items.map((item, index) => <button key={item.id} id={`${listboxId}-${index}`} type="button" role="option" aria-selected={index === activeIndex}
           className={`flex w-full items-center gap-3 rounded-xl p-2.5 text-left ${index === activeIndex ? "bg-sky-400/15" : "hover:bg-white/10"}`}

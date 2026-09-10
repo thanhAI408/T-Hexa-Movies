@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const { q, store, page, limit } = parsed.data;
   const groups = await Promise.all((store ? [store] : stores).map(async (storeId): Promise<StoreSearchGroup> => {
     const international = storeId === "vidsrc" ? vidsrcProvider : storeId === "vidlink" ? vidlinkProvider : null;
-    const common = { storeId, storeName: international ? storeId === "vidsrc" ? "VidSrc" : "VidLink" : STORES[storeId].name, provider: international ? storeId : STORE_API_MAP[storeId] };
+    const common = { storeId, storeName: international ? storeId === "vidsrc" ? "Tinh Tú" : "Ngân Hà" : STORES[storeId].name, provider: international ? storeId : STORE_API_MAP[storeId] };
     // International references use an existing detail shell; the qualified ID selects the actual source.
     const routeStore = international ? "ban-mai" : storeId;
     try {

@@ -82,7 +82,7 @@ export default function WatchPage() {
         rawSources.push({
           id: `vidsrc-${currentEpisode}`,
           provider: "vidsrc",
-          serverName: "VidSrc (Fallback 1)",
+          serverName: "Tinh Tú (Dự phòng 1)",
           streamType: "embed",
           streamUrl: null,
           embedUrl: vidsrcEmbed,
@@ -107,7 +107,7 @@ export default function WatchPage() {
         rawSources.push({
           id: `vidlink-${currentEpisode}`,
           provider: "vidlink",
-          serverName: "VidLink (Fallback 2)",
+          serverName: "Ngân Hà (Dự phòng 2)",
           streamType: "embed",
           streamUrl: null,
           embedUrl: vidlinkEmbed,

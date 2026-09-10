@@ -31,7 +31,7 @@ describe("global search", () => {
     expect(mock).not.toHaveBeenCalled();
     expect(intlSrc).not.toHaveBeenCalled();
     const { groups } = await response.json();
-    expect(groups[0].storeName).toBe("VidLink");
+    expect(groups[0].storeName).toBe("Ngân Hà");
     expect(groups[0].items.map((item: { href: string }) => item.href)).toEqual([
       "/stores/ban-mai/movie/vidlink~movie-123", "/stores/ban-mai/movie/vidlink~tv-123",
     ]);
@@ -43,7 +43,7 @@ describe("global search", () => {
     await vi.waitFor(() => expect(pending).toHaveLength(6));
     pending.forEach(resolve => resolve());
     const payload = await (await response).json();
-    expect(payload.groups.map((group: { storeName: string }) => group.storeName)).toEqual(["Bình Minh", "Ban Mai", "Hoàng Hôn", "Dạ Nguyệt", "VidSrc", "VidLink"]);
+    expect(payload.groups.map((group: { storeName: string }) => group.storeName)).toEqual(["Bình Minh", "Ban Mai", "Hoàng Hôn", "Dạ Nguyệt", "Tinh Tú", "Ngân Hà"]);
     for (const group of payload.groups) expect(group.items[0].href).toBe(`/stores/${group.storeId.startsWith("vid") ? "ban-mai" : group.storeId}/movie/${group.provider}~same-film`);
     expect(new Set(payload.groups.map((group: { items: { id: string }[] }) => group.items[0].id)).size).toBe(6);
   });

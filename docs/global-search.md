@@ -10,3 +10,5 @@ Nguồn lỗi có trạng thái `unavailable`, phân biệt với nguồn tìm t
 VidSrc và VidLink dùng danh mục TMDB, hiển thị riêng nhãn nguồn và phân trang bằng `store=vidsrc` / `store=vidlink`. Liên kết dùng giao diện chi tiết Ban Mai có sẵn, nhưng ID `vidsrc~movie-ID`, `vidlink~tv-ID` quyết định nguồn thực tế, không đổi sang OPhim. Kết quả danh mục không xác nhận video sẽ phát được. Tùy chọn trình phát ngoài và bảo vệ quảng cáo vẫn áp dụng khi xem.
 
 Tìm quốc tế loại bỏ kết quả diễn viên trước khi phân trang; tối đa 20 trang TMDB được kiểm tra. Từ khóa quá rộng hoặc lỗi upstream trả trạng thái chưa kiểm tra được cho nguồn đó. Mỗi yêu cầu TMDB có timeout riêng; tổng thời gian có thể dài hơn một yêu cầu khi có nhiều trang.
+
+Tên hiển thị: VidSrc → Tinh Tú; VidLink → Ngân Hà. Mã nguồn và URL vẫn dùng `vidsrc` / `vidlink` để giữ tương thích liên kết cũ.
