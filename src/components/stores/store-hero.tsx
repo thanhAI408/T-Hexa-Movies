@@ -11,7 +11,7 @@ interface StoreHeroProps {
   store: StoreConfig;
 }
 
-function cleanPosterUrl(url: any): string | null {
+function cleanPosterUrl(url: unknown): string | null {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -23,7 +23,7 @@ function cleanPosterUrl(url: any): string | null {
   return `https://phimimg.com/uploads/movies/${cleaned}`;
 }
 
-export function StoreHero({ store }: StoreHeroProps) {
+function StoreHeroContent({ store }: StoreHeroProps) {
   // Initialize instantly from in-memory cache if available
   const initialCached = useMemo(() => getCachedHero(store.slug), [store.slug]);
   const [featuredMovie, setFeaturedMovie] = useState<ProviderMovieInput | null>(initialCached);
@@ -33,16 +33,6 @@ export function StoreHero({ store }: StoreHeroProps) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const cached = getCachedHero(store.slug);
-    if (cached) {
-      setFeaturedMovie(cached);
-      setLoading(false);
-      setIsVisible(true);
-    } else {
-      setLoading(true);
-      setIsVisible(false);
-    }
-
     let isMounted = true;
     async function fetchFeatured() {
       try {
@@ -214,7 +204,7 @@ export function StoreHero({ store }: StoreHeroProps) {
           </div>
 
           {/* Title */}
-          <h1
+          <h2
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1]"
             style={{
               color: store.theme.text,
@@ -222,7 +212,7 @@ export function StoreHero({ store }: StoreHeroProps) {
             }}
           >
             {featuredMovie.title}
-          </h1>
+          </h2>
 
           {featuredMovie.originalTitle && featuredMovie.originalTitle !== featuredMovie.title && (
             <p
@@ -320,3 +310,5 @@ export function StoreHero({ store }: StoreHeroProps) {
     </section>
   );
 }
+
+export function StoreHero(props: StoreHeroProps) { return <StoreHeroContent key={props.store.slug} {...props} />; }

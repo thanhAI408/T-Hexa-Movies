@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useVisibleRefresh } from "@/lib/use-visible-refresh";
 import { Search, Loader2 } from "lucide-react";
 import { PosterImage } from "@/components/movie/poster-image";
 import type { GlobalSearchResult, StoreSearchGroup } from "@/types/global-search";
@@ -60,17 +61,23 @@ function SearchContent() {
   const [result, setResult] = useState<GlobalSearchResult | null>(null);
   const [error, setError] = useState<{ query: string; message: string } | null>(null);
   const [retry, setRetry] = useState(0);
+  const [version, setVersion] = useState(0);
+  const [checkedAt, setCheckedAt] = useState<number | null>(null);
+  const [expandedQuery, setExpandedQuery] = useState<string | null>(null);
+  const busy = useRef(false);
+  useVisibleRefresh(() => { if (!busy.current) setRetry(value => value + 1); }, 60000, !!query && expandedQuery !== query);
   const current = result?.query === query ? result : null;
   const currentError = error?.query === query ? error.message : null;
   useEffect(() => {
     if (!query) return;
     const controller = new AbortController();
+    busy.current = true;
     fetch(`/api/search/all?q=${encodeURIComponent(query)}`, { signal: controller.signal })
       .then(async response => {
         const data = await response.json();
-        if (!Array.isArray(data.groups)) throw new Error("Không thể tìm kiếm. Từ khóa tối đa 150 ký tự; hãy thử lại.");
-        if (!controller.signal.aborted) setResult(data);
-      }).catch(() => { if (!controller.signal.aborted) setError({ query, message: "Không thể tìm kiếm lúc này. Kiểm tra kết nối hoặc thử lại với từ khóa tối đa 150 ký tự." }); });
+        if (!response.ok || !Array.isArray(data.groups)) throw new Error("Không thể tìm kiếm. Từ khóa tối đa 150 ký tự; hãy thử lại.");
+        if (!controller.signal.aborted) { setError(null); setResult(data); setVersion(value => value + 1); setCheckedAt(Date.now()); }
+      }).catch(() => { if (!controller.signal.aborted) setError({ query, message: "Không thể tìm kiếm lúc này. Kiểm tra kết nối hoặc thử lại với từ khóa tối đa 150 ký tự." }); }).finally(() => { if (!controller.signal.aborted) busy.current = false; });
     return () => controller.abort();
   }, [query, retry]);
   return <div className="page-shell py-8">
@@ -84,16 +91,18 @@ function SearchContent() {
         className="h-12 min-w-0 flex-1 rounded-full border border-white/15 bg-white/5 px-5 text-white outline-none focus:border-sky-400" />
       <button type="submit" className="rounded-full bg-sky-400 px-4 font-semibold text-slate-950">Tìm kiếm</button>
     </form>
-    {!query ? <p className="py-12 text-center text-white/55"><Search className="mx-auto mb-3" />Nhập tên phim để xem kho nào đang có.</p> : currentError ?
+    {query && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-xs text-white/60"><span>{expandedQuery === query ? 'Tạm dừng tự cập nhật để giữ các trang bạn đã mở' : 'Tự kiểm tra mỗi 60 giây khi đang xem'}{checkedAt && ` · Kiểm tra lúc ${new Date(checkedAt).toLocaleTimeString('vi-VN')}`}</span><button className="rounded-full border border-white/20 px-3 py-2" onClick={() => { if (!busy.current) { setExpandedQuery(null); setRetry(value => value + 1); } }}>Cập nhật kết quả</button></div>}
+    {current && currentError && <p role="status" className="mb-4 text-sm text-amber-200">Chưa cập nhật được kết quả. Đang giữ danh sách gần nhất.</p>}
+    {!query ? <p className="py-12 text-center text-white/55"><Search className="mx-auto mb-3" />Nhập tên phim để xem kho nào đang có.</p> : currentError && !current ?
       <div role="alert" className="py-10 text-center text-amber-200">{currentError}<button type="button" className="ml-3 underline" onClick={() => { setError(null); setResult(null); setRetry(value => value + 1); }}>Thử lại</button></div> : !current ?
       <p role="status" className="flex items-center justify-center gap-3 py-12 text-white/60"><Loader2 className="animate-spin" />Đang tìm “{query}” trong cả sáu nguồn…</p> : <>
         <p className="mb-5 text-sm text-white/65">Kết quả cho “{query}” · {current.groups.filter(group => group.items.length > 0).length}/{current.groups.length} nguồn có kết quả.</p>
         {current.partial && <p role="status" className="mb-5 rounded-xl border border-amber-300/20 p-3 text-sm text-amber-200">Một số nguồn đang gián đoạn; chưa thể kết luận phim không có tại những nguồn đó.</p>}
-        {[...current.groups].sort((a, b) => Number(a.status === "unavailable") - Number(b.status === "unavailable")).map(group => <StoreResults key={`${query}:${retry}:${group.storeId}`} initial={group} query={query} onUpdate={updated => setResult(previous => {
+        {[...current.groups].sort((a, b) => Number(a.status === "unavailable") - Number(b.status === "unavailable")).map(group => <StoreResults key={`${query}:${version}:${group.storeId}`} initial={group} query={query} onUpdate={updated => { setExpandedQuery(query); setResult(previous => {
           if (!previous || previous.query !== query) return previous;
           const groups = previous.groups.map(item => item.storeId === updated.storeId ? updated : item);
           return { ...previous, groups, partial: groups.some(item => item.status === "unavailable") };
-        })} />)}
+        }); }} />)}
       </>}
   </div>;
 }

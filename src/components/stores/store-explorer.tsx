@@ -7,6 +7,7 @@ import {
   Calendar, Sparkles, Play, Clock, TrendingUp, Globe, Check, SlidersHorizontal,
   Layers, RefreshCw, ArrowUpDown
 } from "lucide-react";
+import { useVisibleRefresh } from "@/lib/use-visible-refresh";
 import type { ProviderMovieInput } from "@/types/catalog";
 import type { StoreConfig } from "@/lib/stores/config";
 import {
@@ -143,6 +144,10 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
   const [movieError, setMovieError] = useState<string | null>(null);
   const [sourceNotice, setSourceNotice] = useState<string | null>(initialDiscover?.notice ?? null);
   const [retryCount, setRetryCount] = useState(0);
+  const [checkedAt, setCheckedAt] = useState<number | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
+  const hasMovies = useRef(Boolean(initialDiscover?.items.length));
+  const requestBusy = useRef(false);
 
   // Modal / Drawer state for full taxonomy
   const [activeModal, setActiveModal] = useState<"genre" | "country" | "year" | "all" | null>(null);
@@ -152,6 +157,10 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
 
   const gridRef = useRef<HTMLDivElement>(null);
   const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  const modalRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => { if (activeModal) modalRef.current?.showModal(); }, [activeModal]);
+  useVisibleRefresh(() => { if (!requestBusy.current) setRetryCount(value => value + 1); }, 60000, page === 1 && !activeModal);
 
   // Close sort dropdown when clicking outside
   useEffect(() => {
@@ -208,21 +217,26 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
   useEffect(() => {
     const controller = new AbortController();
     async function loadMovies() {
+      requestBusy.current = true;
       try {
         const response = await fetch(`/api/stores/${store.slug}/discover?${currentQueryString}`, { signal: controller.signal });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Không tải được phim. Vui lòng thử lại.");
         if (controller.signal.aborted) return;
+        setMovieError(null);
+        setRefreshWarning(null);
+        setCheckedAt(Date.now());
+        hasMovies.current = data.items.length > 0;
         setMovies(data.items);
         setPagination(data.pagination);
         setSourceNotice(data.notice ?? null);
         setCachedDiscover(store.slug, currentQueryString, data);
       } catch (error) {
         if (controller.signal.aborted) return;
-        setMovies([]);
-        setMovieError(error instanceof Error ? error.message : "Không tải được phim.");
+        if (hasMovies.current) setRefreshWarning('Chưa kiểm tra được dữ liệu mới. Đang giữ danh sách lần tải thành công gần nhất.');
+        else { setMovies([]); setMovieError(error instanceof Error ? error.message : "Không tải được phim."); }
       } finally {
-        if (!controller.signal.aborted) setLoadingMovies(false);
+        if (!controller.signal.aborted) { requestBusy.current = false; setLoadingMovies(false); }
       }
     }
     void loadMovies();
@@ -245,7 +259,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
     if (shouldScroll && gridRef.current) {
       const yOffset = -100;
       const y = gridRef.current.getBoundingClientRect().top + window.pageYOffset + yOffset;
-      window.scrollTo({ top: y, behavior: "smooth" });
+      window.scrollTo({ top: y, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     }
   }, [router, pathname, searchParams]);
 
@@ -399,7 +413,9 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               type="text"
               value={localQuery}
               onChange={(e) => setLocalQuery(e.target.value)}
-              placeholder="Tìm kiếm phim, diễn viên, đạo diễn..."
+              maxLength={150}
+              aria-label="Tìm phim trong kho"
+              placeholder="Tìm kiếm tên phim..."
               className="w-full rounded-2xl border-0 bg-transparent py-4 pl-12.5 pr-28 text-base font-normal outline-none transition-all"
               style={{ color: store.theme.text }}
             />
@@ -777,6 +793,11 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
         </div>
       )}
 
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs" style={{ color: store.theme.textMuted }}>
+        <span>{page === 1 ? 'Tự kiểm tra mỗi 60 giây khi đang xem' : 'Tạm dừng tự cập nhật khi xem trang tiếp theo'}{checkedAt && ` · Kiểm tra lúc ${new Date(checkedAt).toLocaleTimeString('vi-VN')}`}</span>
+        <button type="button" className="flex items-center gap-2 rounded-full border px-3 py-2" aria-label="Cập nhật danh sách phim" onClick={() => { if (!requestBusy.current) setRetryCount(value => value + 1); }}><RefreshCw size={14} />Cập nhật ngay</button>
+      </div>
+      {refreshWarning && <p role="status" className="text-sm text-amber-300">{refreshWarning}</p>}
       {sourceNotice && <p role="status" className="rounded-xl border p-3 text-sm" style={{ color: store.theme.textSecondary, borderColor: store.theme.border }}>{sourceNotice}</p>}
       {/* 4. RESULTS HEADER WITH DYNAMIC TITLE */}
       <div className="flex items-center justify-between pt-1">
@@ -1032,7 +1053,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
 
       {/* 7. ALL-IN-ONE TAXONOMY MODAL DRAWER */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+        <dialog ref={modalRef} aria-label="Bộ lọc phim" onClose={() => setActiveModal(null)} className="fixed inset-0 m-auto bg-transparent p-4 text-inherit backdrop:bg-black/70 backdrop:backdrop-blur-md max-w-full max-h-full" onClick={event => { if (event.target === event.currentTarget) setActiveModal(null); }}>
           <div 
             className="relative flex flex-col w-full max-w-2xl max-h-[85vh] rounded-3xl border shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
             style={{ background: store.theme.surface, borderColor: store.theme.border }}
@@ -1061,6 +1082,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
+                aria-label="Đóng bộ lọc"
                 className="rounded-full p-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
                 style={{ color: store.theme.textMuted }}
               >
@@ -1260,7 +1282,7 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
               </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
     </div>
   );

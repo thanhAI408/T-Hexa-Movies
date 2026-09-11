@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
 import type { StoreConfig } from "@/lib/stores/config";
 
 interface ThemeContextType {
@@ -24,18 +24,15 @@ interface StoreProviderProps {
 }
 
 export function StoreProvider({ store, children }: StoreProviderProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   // Apply theme CSS variables to root
   useEffect(() => {
-    if (!mounted) return;
 
     const t = store.theme;
     const root = document.documentElement;
+    const properties = ['--bg-primary', '--bg-secondary', '--bg-surface', '--bg-surface-hover', '--color-primary', '--color-primary-hover', '--color-primary-muted', '--color-secondary', '--color-accent', '--text-primary', '--text-secondary', '--text-muted', '--text-inverse', '--border-color', '--border-hover', '--glow-color', '--overlay-color', '--gradient-start', '--gradient-end', '--gradient-accent', '--shadow-sm', '--shadow-md', '--shadow-lg', '--shadow-glow'];
+    const previous = properties.map(name => [name, root.style.getPropertyValue(name)]);
+    const background = document.body.style.background;
+    const color = document.body.style.color;
 
     // Background
     root.style.setProperty("--bg-primary", t.background);
@@ -82,18 +79,11 @@ export function StoreProvider({ store, children }: StoreProviderProps) {
     document.body.style.color = t.text;
 
     return () => {
-      root.style.removeProperty("--bg-primary");
-      root.style.removeProperty("--color-primary");
+      previous.forEach(([name, value]) => { if (value) root.style.setProperty(name, value); else root.style.removeProperty(name); });
+      document.body.style.background = background;
+      document.body.style.color = color;
     };
-  }, [store, mounted]);
-
-  if (!mounted) {
-    return (
-      <div style={{ background: store.theme.background, minHeight: "100vh" }}>
-        {children}
-      </div>
-    );
-  }
+  }, [store]);
 
   return (
     <ThemeContext.Provider value={{ store, theme: store.theme }}>

@@ -27,7 +27,7 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "year_asc", label: "📅 Năm cũ nhất" },
 ];
 
-function cleanPosterUrl(url: any): string | null {
+function cleanPosterUrl(url: unknown): string | null {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
   if (!trimmed) return null;
@@ -287,7 +287,7 @@ function MovieGridContent({ store }: MovieGridProps) {
         <p className="text-sm" style={{ color: store.theme.textMuted }}>
           {searchQuery ? (
             <>
-              Kết quả cho <span className="font-semibold" style={{ color: store.theme.primary }}>"{searchQuery}"</span>
+              Kết quả cho <span className="font-semibold" style={{ color: store.theme.primary }}>&quot;{searchQuery}&quot;</span>
               {" "}- {state.pagination.totalItems} phim
             </>
           ) : (

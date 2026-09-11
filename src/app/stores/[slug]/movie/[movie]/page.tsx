@@ -16,7 +16,7 @@ interface Props {
   params: Promise<{ slug: string; movie: string }>;
 }
 
-function cleanPosterUrl(url: any): string | null {
+function cleanPosterUrl(url: unknown): string | null {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
   if (!trimmed) return null;

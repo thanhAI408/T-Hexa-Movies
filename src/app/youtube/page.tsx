@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Play, Home, Clock, History, ArrowLeft, RefreshCw, ExternalLink, Share2, X, Check, Menu, PanelTop, SlidersHorizontal, ThumbsUp, Music2, Gamepad2, Newspaper, GraduationCap, Cpu, Compass } from 'lucide-react';
 import { youtubeId, type YoutubeResult, type YoutubeVideo } from '@/lib/youtube/types';
+import { useVisibleRefresh } from '@/lib/use-visible-refresh';
 import { discoveryBatch } from '@/lib/youtube/discovery';
 import './youtube.css';
 
@@ -100,11 +101,7 @@ function YouTubeContent() {
     }).catch(e => { if (!abort.signal.aborted) setState({ key, error: e.message || 'Không thể tải video.' }); });
     return () => abort.abort();
   }, [query, key, local]);
-  useEffect(() => {
-    if (local || id) return;
-    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') setRefresh(value => value + 1); }, 300000);
-    return () => window.clearInterval(timer);
-  }, [local, id]);
+  useVisibleRefresh(() => setRefresh(value => value + 1), 300000, !local && !id && !q && !channel && !moreBusy && (current?.data?.items.length || 0) <= 24);
   const video = current?.data?.items[0];
   useEffect(() => { if (id && video?.id === id) store('yt-history', [video, ...library(snapshot('yt-history')).filter(item => item.id !== id)]); }, [id, video]);
   function toggle(video: YoutubeVideo) {

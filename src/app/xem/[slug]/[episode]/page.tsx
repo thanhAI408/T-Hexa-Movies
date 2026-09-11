@@ -65,8 +65,9 @@ export default function WatchPage() {
   const sources = useMemo(() => {
     const rawSources = [...(currentEpisodeData?.sources ?? [])];
 
-    const tmdbId = (movie as any)?.tmdbId || (movie as any)?.externalIds?.tmdbId || null;
-    const imdbId = (movie as any)?.imdbId || (movie as any)?.externalIds?.imdbId || null;
+    const identifiers = movie as (typeof movie & { tmdbId?: string; imdbId?: string; externalIds?: { tmdbId?: string; imdbId?: string } });
+    const tmdbId = identifiers?.tmdbId || identifiers?.externalIds?.tmdbId || null;
+    const imdbId = identifiers?.imdbId || identifiers?.externalIds?.imdbId || null;
     const seasonNumber = currentEpisodeData?.seasonNumber ?? 1;
     const episodeNumber = currentEpisodeData?.episodeNumber ?? 1;
 
