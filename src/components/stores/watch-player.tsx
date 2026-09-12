@@ -50,7 +50,7 @@ export function WatchPlayer(props: WatchPlayerProps) {
         <span className="block text-xs opacity-75">Chỉ dùng nguồn phát trực tiếp. Bỏ chọn để mở thêm nguồn dự phòng; một số nguồn có thể có quảng cáo.</span>
       </span>
     </label>
-    <PlaybackSession key={`${props.movieSlug}:${props.fallbackSources?.[0]?.id}:${props.seasonNumber}:${props.episodeNumber}:${directOnly}`} {...props} directOnly={directOnly} />
+    <PlaybackSession key={`${props.movieSlug}:${props.fallbackSources?.[0]?.id}:${props.seasonNumber}:${props.episodeNumber}:${directOnly}`} {...props} directOnly={directOnly} enableEmbedded={() => setDirectOnly(false)} />
   </div>;
 }
 
@@ -69,7 +69,8 @@ function PlaybackSession({
   episodeNumber,
   movieType,
   directOnly,
-}: WatchPlayerProps & { directOnly: boolean }) {
+  enableEmbedded,
+}: WatchPlayerProps & { directOnly: boolean; enableEmbedded: () => void }) {
   const [activeSourceIndex, setActiveSourceIndex] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -263,7 +264,10 @@ function PlaybackSession({
     const video = videoRef.current;
     const url = currentSource?.streamUrl;
     if (!video || !url || currentSource?.streamType === "embed") return;
-    if (currentSource?.streamType === "mp4" || video.canPlayType("application/vnd.apple.mpegurl")) {
+    // Chromium can report native HLS as "maybe" and still reject a valid
+    // playlist with MEDIA_ERR_SRC_NOT_SUPPORTED. Prefer the MSE player when
+    // available; reserve native HLS for browsers without Hls.js support.
+    if (currentSource?.streamType === "mp4" || (!Hls.isSupported() && video.canPlayType("application/vnd.apple.mpegurl"))) {
       video.src = url;
       return () => { video.removeAttribute("src"); video.load(); };
     }
@@ -311,11 +315,16 @@ function PlaybackSession({
             <AlertCircle size={32} />
           </div>
           <h3 className="text-lg font-bold" style={{ color: store.theme.text }}>
-            {backupsPending ? "Đang tìm nguồn phát trực tiếp" : "Không tìm thấy nguồn phát phù hợp"}
+            {directOnly && baseSources.some(source => safePlaybackUrl(source.embedUrl)) ? "Nguồn này dùng trình phát riêng" : backupsPending ? "Đang tìm nguồn phát trực tiếp" : "Không tìm thấy nguồn phát phù hợp"}
           </h3>
           <p className="text-xs max-w-sm text-slate-400" style={{ color: store.theme.textMuted }}>
-            {directOnly ? "Bạn đang chọn chỉ phát trực tiếp. Có thể bỏ chọn tùy chọn này để thử thêm nguồn khác." : "Chưa có nguồn phát cho tập này. Bạn vui lòng chọn tập khác hoặc thử lại sau."}
+            {directOnly ? "Chọn nút bên dưới để mở trình phát của nguồn. Một số nguồn có thể có quảng cáo." : "Chưa có nguồn phát cho tập này. Bạn vui lòng chọn tập khác hoặc thử lại sau."}
           </p>
+          {directOnly && baseSources.some(source => safePlaybackUrl(source.embedUrl)) && (
+            <button type="button" onClick={enableEmbedded} className="rounded-xl px-5 py-3 font-semibold" style={{ background: store.theme.primary, color: store.theme.textInverse }}>
+              Phát bằng trình phát của nguồn
+            </button>
+          )}
         </div>
       </div>
     );
@@ -448,6 +457,11 @@ function PlaybackSession({
             </p>
 
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+              {directOnly && baseSources.some(source => safePlaybackUrl(source.embedUrl)) && (
+                <button type="button" onClick={enableEmbedded} className="rounded-xl px-4 py-2 text-xs font-semibold" style={{ background: store.theme.primary, color: store.theme.textInverse }}>
+                  Thử trình phát của nguồn
+                </button>
+              )}
               {allSources.map((src, idx) => (
                 <button
                   key={src.id}

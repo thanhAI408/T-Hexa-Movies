@@ -73,3 +73,33 @@ test("legacy player also requires opt-in and applies the sandbox", async ({ page
   await toggle.uncheck();
   await expect(page.locator("iframe")).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
 });
+
+
+test("default direct playback uses Hls.js even when native HLS reports maybe", async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = HTMLMediaElement.prototype.canPlayType;
+    HTMLMediaElement.prototype.canPlayType = function(type: string) {
+      return type === 'application/vnd.apple.mpegurl' ? 'maybe' : original.call(this, type);
+    };
+  });
+  await page.goto(watchUrl);
+  await expect(page.getByRole('checkbox', { name: 'Chỉ phát trực tiếp' })).toBeChecked();
+  const video = page.locator('video');
+  await expect(video).toHaveAttribute('src', /^blob:/);
+  await video.evaluate(async node => { const media = node as HTMLVideoElement; media.muted = true; await media.play(); });
+  await expect.poll(() => video.evaluate(node => (node as HTMLVideoElement).currentTime), { timeout: 30000 }).toBeGreaterThan(2);
+  await expect(page.getByRole('heading', { name: 'Video đang bị gián đoạn' })).toHaveCount(0);
+  await expect(page.locator('iframe')).toHaveCount(0);
+});
+
+test("embed-only movie offers an explicit playback action with sandbox intact", async ({ page }) => {
+  await page.route('**/sources?**', route => route.fulfill({ json: { sources: [] } }));
+  await page.route('https://v8.streamvsmov.com/**', route => route.fulfill({ contentType: 'text/html', body: '<p>Provider player</p>' }));
+  await page.goto('/stores/binh-minh/watch/vsmov~than-nong-o-nong-thon');
+  await expect(page.getByRole('heading', { name: 'Nguồn này dùng trình phát riêng' })).toBeVisible();
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Phát bằng trình phát của nguồn', exact: true }).click();
+  await expect(page.locator('iframe')).toHaveAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+  await expect(page.locator('iframe')).toHaveAttribute('src', /streamvsmov/);
+  await expect(page.getByRole('checkbox', { name: 'Chỉ phát trực tiếp' })).not.toBeChecked();
+});
