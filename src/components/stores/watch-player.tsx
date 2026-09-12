@@ -1,7 +1,7 @@
 "use client";
 
 import Hls from "hls.js";
-import { useState, useRef, useEffect, useMemo, useCallback, useEffectEvent } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, useEffectEvent, useSyncExternalStore } from "react";
 import {
   AlertCircle,
   RotateCcw,
@@ -22,12 +22,18 @@ import {
   buildVidLinkEmbed,
 } from "@/lib/streaming/fallback";
 
+import { MovieSessionTools, type NextEpisode } from './movie-session-tools';
+import { markSource, readHealth, rankSources, sourceKey } from '@/lib/streaming/source-health';
+const subscribeHydration = () => () => {};
 const EMPTY_SOURCES: PlaybackSource[] = [];
 
 interface WatchPlayerProps {
   store: StoreConfig;
   movieSlug: string;
   movieTitle: string;
+  episodeLabel?: string;
+  watchHref?: string;
+  nextEpisode?: NextEpisode;
   embedUrl?: string | null;
   streamUrl?: string | null;
   quality?: string | null;
@@ -43,6 +49,7 @@ interface WatchPlayerProps {
 
 export function WatchPlayer(props: WatchPlayerProps) {
   const [directOnly, setDirectOnly] = useState(true);
+  const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
   return <div className="space-y-3">
     <label className="flex items-start gap-3 rounded-xl border p-3 text-sm" style={{ color: props.store.theme.text, borderColor: props.store.theme.border }}>
       <input type="checkbox" checked={directOnly} onChange={event => setDirectOnly(event.target.checked)} className="mt-1" />
@@ -50,13 +57,17 @@ export function WatchPlayer(props: WatchPlayerProps) {
         <span className="block text-xs opacity-75">Chỉ dùng nguồn phát trực tiếp. Bỏ chọn để mở thêm nguồn dự phòng; một số nguồn có thể có quảng cáo.</span>
       </span>
     </label>
-    <PlaybackSession key={`${props.movieSlug}:${props.fallbackSources?.[0]?.id}:${props.seasonNumber}:${props.episodeNumber}:${directOnly}`} {...props} directOnly={directOnly} enableEmbedded={() => setDirectOnly(false)} />
+    {hydrated ? <PlaybackSession key={`${props.movieSlug}:${props.fallbackSources?.[0]?.id}:${props.seasonNumber}:${props.episodeNumber}:${directOnly}`} {...props} directOnly={directOnly} enableEmbedded={() => setDirectOnly(false)} /> : <div className="aspect-video bg-black" role="status">Đang mở trình phát…</div>}
   </div>;
 }
 
 function PlaybackSession({
   store,
   movieTitle,
+  movieSlug,
+  episodeLabel,
+  watchHref,
+  nextEpisode,
   embedUrl,
   streamUrl,
   quality,
@@ -71,6 +82,11 @@ function PlaybackSession({
   directOnly,
   enableEmbedded,
 }: WatchPlayerProps & { directOnly: boolean; enableEmbedded: () => void }) {
+  const [health] = useState(readHealth);
+  const [observedAt] = useState(Date.now);
+  const [locked, setLocked] = useState(false);
+  const [errorCode, setErrorCode] = useState('');
+  const [restorePosition, setRestorePosition] = useState(0);
   const [activeSourceIndex, setActiveSourceIndex] = useState(0);
   const [retryKey, setRetryKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -176,12 +192,12 @@ function PlaybackSession({
     episodeNumber,
   ]);
 
-  const eligibleSources = useMemo(() => baseSources.flatMap(source => {
+  const eligibleSources = useMemo(() => rankSources(baseSources.flatMap(source => {
     const streamUrl = safePlaybackUrl(source.streamUrl);
     const embedUrl = directOnly ? null : safePlaybackUrl(source.embedUrl);
     if (!streamUrl && !embedUrl) return [];
     return [{ ...source, streamUrl, embedUrl: streamUrl ? null : embedUrl, streamType: streamUrl ? (source.streamType === "mp4" ? "mp4" as const : "hls" as const) : "embed" as const }];
-  }), [baseSources, directOnly]);
+  }), health, observedAt), [baseSources, directOnly, health, observedAt]);
   const allSources = useMemo(() => [...eligibleSources, ...vnBackups], [eligibleSources, vnBackups]);
 
   const [showFallbacks, setShowFallbacks] = useState(true);
@@ -201,7 +217,7 @@ function PlaybackSession({
           if ((!streamUrl && !embedUrl) || eligibleSources.some(existing => (existing.streamUrl || existing.embedUrl) === (streamUrl || embedUrl))) return [];
           return [{ ...source, streamUrl, embedUrl: streamUrl ? null : embedUrl, streamType: streamUrl ? (source.streamType === "mp4" ? "mp4" as const : "hls" as const) : "embed" as const }];
         });
-        setVnBackups(sources);
+        setVnBackups(rankSources(sources, health));
         // Continue an exhausted chain when the deferred Vietnamese lookup finishes.
         if (sources.length && exhaustedSource.current !== null && eligibleSources.length > exhaustedSource.current) {
           exhaustedSource.current = null;
@@ -214,7 +230,7 @@ function PlaybackSession({
       .catch(() => { /* Optional backups must not interrupt the primary player. */ })
       .finally(() => { window.clearTimeout(timeout); setBackupsPending(false); });
     return () => { controller.abort(); window.clearTimeout(timeout); };
-  }, [backupSourcesUrl, eligibleSources, directOnly]);
+  }, [backupSourcesUrl, eligibleSources, directOnly, health]);
 
   const currentSource = allSources[activeSourceIndex] || allSources[0];
 
@@ -222,6 +238,8 @@ function PlaybackSession({
   const handleSourceError = useCallback(() => {
     if (failedSources.current.has(activeSourceIndex)) return;
     failedSources.current.add(activeSourceIndex);
+    setRestorePosition(videoRef.current?.currentTime || 0);
+    if (currentSource) markSource(currentSource, false);
     setIsLoading(false);
     setShowFallbacks(true);
 
@@ -249,6 +267,7 @@ function PlaybackSession({
 
   // Handle switching source manually
   const switchSource = (index: number) => {
+    setRestorePosition(videoRef.current?.currentTime || 0);
     exhaustedSource.current = null;
     failedSources.current.delete(index);
     setRetryKey(value => value + 1);
@@ -256,9 +275,10 @@ function PlaybackSession({
     setIsLoading(true);
     setHasError(false);
     setAutoFallbackNotice(null);
+    setErrorCode('');
   };
 
-  const handleMediaError = useEffectEvent(() => handleSourceError());
+  const handleMediaError = useEffectEvent((code = 'MEDIA_ERROR') => { setErrorCode(code); handleSourceError(); });
 
   useEffect(() => {
     const video = videoRef.current;
@@ -271,9 +291,9 @@ function PlaybackSession({
       video.src = url;
       return () => { video.removeAttribute("src"); video.load(); };
     }
-    if (!Hls.isSupported()) { handleMediaError(); return; }
+    if (!Hls.isSupported()) { const timer=window.setTimeout(()=>handleMediaError('UNSUPPORTED'),0); return ()=>clearTimeout(timer); }
     const hls = new Hls({ maxBufferLength: 30 });
-    hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) handleMediaError(); });
+    hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) handleMediaError(data.details); });
     hls.loadSource(url);
     hls.attachMedia(video);
     return () => hls.destroy();
@@ -289,10 +309,12 @@ function PlaybackSession({
     return () => window.clearTimeout(timer);
   }, [isLoading, activeSourceIndex, retryKey]);
 
+  const sessionTools = <MovieSessionTools movie={{id:`${store.slug}:${movieSlug}`, title:movieTitle, href:watchHref || `/stores/${store.slug}/watch/${movieSlug}`, detailHref:`/stores/${store.slug}/movie/${movieSlug}`}} restorePosition={restorePosition} episode={episodeLabel || `Tập ${episodeNumber || 1}`} nextEpisode={nextEpisode} videoRef={videoRef} sourceKey={`${currentSource?.id || 'none'}:${retryKey}`} embedded={!currentSource?.streamUrl} errorCode={errorCode} provider={currentSource?.provider || ''} sourceName={currentSource?.name || 'Chưa có nguồn'} onReportFailure={()=>{if(currentSource)markSource(currentSource,false);}} onLock={setLocked} locked={locked} onVerifiedPlay={()=>{if(currentSource)markSource(currentSource,true);}} />;
+
   // No sources available at all
   if (!currentSource || (!currentSource.embedUrl && !currentSource.streamUrl)) {
     return (
-      <div
+      <><div
         className="relative flex aspect-video w-full flex-col items-center justify-center overflow-hidden rounded-3xl border p-8"
         style={{
           background: store.theme.surface,
@@ -326,7 +348,7 @@ function PlaybackSession({
             </button>
           )}
         </div>
-      </div>
+      </div>{sessionTools}</>
     );
   }
 
@@ -351,7 +373,7 @@ function PlaybackSession({
     <div className="relative w-full space-y-4">
       {/* Ambient Theater Backlight Glow */}
       <div
-        className="absolute -inset-4 sm:-inset-6 rounded-3xl opacity-35 blur-3xl pointer-events-none transition-all duration-700"
+          className="absolute inset-0 sm:-inset-6 rounded-3xl opacity-35 blur-3xl pointer-events-none transition-all duration-700"
         style={{
           background: `radial-gradient(ellipse at 50% 50%, ${store.theme.primary} 0%, ${store.theme.secondary} 40%, transparent 80%)`,
         }}
@@ -409,18 +431,19 @@ function PlaybackSession({
           <video
             key={`video-${currentSource.id}-${activeStreamUrl}-${retryKey}`}
             ref={videoRef}
-            controls
+            controls={!locked}
             autoPlay
             className="h-full w-full"
             style={{ background: "#000000" }}
             playsInline
             onLoadedData={() => setIsLoading(false)}
-            onError={handleSourceError}
+            onError={() => { setErrorCode(`MEDIA_${videoRef.current?.error?.code || 'UNKNOWN'}`); handleSourceError(); }}
           >
             <track kind="captions" />
           </video>
         ) : null}
 
+        {locked && <div className="absolute inset-0 z-20 grid place-items-center bg-black/10" style={{touchAction:'none'}}><span className="rounded-xl bg-black/70 p-3 text-white">Đã khóa thao tác · Mở khóa bằng nút bên dưới</span></div>}
         {/* Loading overlay */}
         {isLoading && (
           <div
@@ -498,6 +521,7 @@ function PlaybackSession({
         )}
       </div>
 
+      {sessionTools}
       {/* Multi-Tier Server Selector Bar */}
       <div
         className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-2xl border p-3.5 sm:px-5 backdrop-blur-xl"
@@ -537,6 +561,7 @@ function PlaybackSession({
               >
                 {getTierIcon(source.tier)}
                 <span>{source.name}</span>
+                {health[sourceKey(source)] && observedAt-health[sourceKey(source)].checked < (health[sourceKey(source)].success ? 7*86400000 : 30*60000) && <span className="text-[10px]">{health[sourceKey(source)].success ? 'Đã phát được' : 'Gần đây bị lỗi'}</span>}
                 {isActive && <CheckCircle2 size={13} className="ml-0.5" />}
               </button>
             );

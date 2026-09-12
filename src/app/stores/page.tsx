@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { STORE_LIST } from "@/lib/stores/config";
 import { StoreLogo } from "@/components/stores/store-logo";
+import { MovieLibrary } from "@/components/stores/movie-library";
 import { StoreCard } from "@/components/stores/store-card-variants";
 
 interface MovieThumbnail {
@@ -400,6 +401,7 @@ export default function StoresPage() {
       {/* ========================================================================= */}
       {/* CỤM 2: 4 KHO PHIM ĐIỆN ẢNH VỚI POSTER THỰC TẾ & THƯỚC PHIM 35MM (WAO FACTOR) */}
       {/* ========================================================================= */}
+      <MovieLibrary />
       <div className="page-shell relative z-10 pb-24">
         {/* Section Header */}
         <div className="mb-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 border-b border-white/10 pb-5">

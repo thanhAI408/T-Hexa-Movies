@@ -7,6 +7,7 @@ import { Play, ArrowLeft, Clock, Calendar, Film, Users, ChevronLeft, ChevronRigh
 import { STORES } from "@/lib/stores/config";
 import { StoreProvider } from "@/components/stores/theme-provider";
 import { StoreHeader } from "@/components/stores/store-header";
+import { MovieLibraryActions } from "@/components/stores/movie-library";
 import { EpisodeList } from "@/components/stores/episode-list";
 import { getMovieDetail } from "@/lib/stores/actions";
 import { getRelatedMovies } from "@/lib/stores/actions";
@@ -423,6 +424,7 @@ export default async function MovieDetailPage({ params }: Props) {
       {/* Episodes Section */}
       {uniqueEpisodes.length > 0 && (
         <section className="page-shell py-10 pb-20">
+          <MovieLibraryActions movie={{ id: `${slug}:${movieSlug}`, title: movieInfo.title, href: `/stores/${slug}/watch/${movieSlug}`, detailHref: `/stores/${slug}/movie/${movieSlug}` }} />
           <div className="flex items-center justify-between pb-4 mb-4 border-b" style={{ borderColor: store.theme.border }}>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: store.theme.text }}>
               Danh Sách Tập Phim

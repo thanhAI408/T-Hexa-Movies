@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useSyncExternalStore } from "react";
+import { subscribeLocal, readLocal, PREFERENCES_KEY } from '@/lib/movie-library';
 import { usePathname } from "next/navigation";
 import { BackgroundSwitcher } from "./background-switcher";
 
@@ -39,8 +40,11 @@ const subscribeHydration = () => () => {};
 function savedPreference(key: string, fallback: string) { try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; } }
 export function InteractiveBackground() {
   const pathname = usePathname();
+  const preferences = useSyncExternalStore(subscribeLocal, () => readLocal(PREFERENCES_KEY, '{}'), () => '{}');
+  const reduced = (()=>{try{return JSON.parse(preferences).reduced===true;}catch{return false;}})();
+  useEffect(()=>{document.documentElement.dataset.reducedEffects=String(reduced);return()=>{delete document.documentElement.dataset.reducedEffects;};},[reduced]);
   const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
-  return hydrated && pathname !== "/youtube" && !pathname.includes("/watch/") && !pathname.startsWith("/xem/") ? <HydratedBackground /> : null;
+  return hydrated && !reduced && pathname !== "/youtube" && !pathname.includes("/watch/") && !pathname.startsWith("/xem/") ? <HydratedBackground /> : null;
 }
 function HydratedBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

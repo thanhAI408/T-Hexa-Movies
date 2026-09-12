@@ -71,6 +71,9 @@ export default async function WatchPage({ params, searchParams }: Props) {
     ? uniqueEpisodes.find((ep) => ep.episodeKey === episodeKey && (!server || ep.serverName === server) && (!season || String(ep.seasonNumber ?? 1) === season)) || uniqueEpisodes[0]
     : uniqueEpisodes[0];
 
+  const episodeHref = (ep: typeof selectedEpisode) => `/stores/${slug}/watch/${movie}?${new URLSearchParams({episode:ep.episodeKey,server:ep.serverName,season:String(ep.seasonNumber ?? 1)})}`;
+  const next = selectedEpisode?.episodeNumber != null ? uniqueEpisodes.filter(ep => ep.provider===selectedEpisode.provider && ep.serverName===selectedEpisode.serverName && (ep.seasonNumber ?? 1)===(selectedEpisode.seasonNumber ?? 1) && ep.episodeNumber != null && ep.episodeNumber>selectedEpisode.episodeNumber!).sort((a,b)=>a.episodeNumber!-b.episodeNumber!)[0] : undefined;
+
   // Build all tiered fallback sources (Primary -> Fallback 1: VidSrc -> Fallback 2: VidLink -> Fallback 3: VN)
   const playbackSources = buildEpisodePlaybackSources(movieInfo, selectedEpisode, episodes);
 
@@ -147,6 +150,9 @@ export default async function WatchPage({ params, searchParams }: Props) {
             store={store}
             movieSlug={movie}
             movieTitle={movieInfo.title}
+            episodeLabel={selectedEpisode?.episodeLabel || undefined}
+            watchHref={selectedEpisode ? episodeHref(selectedEpisode) : undefined}
+            nextEpisode={next ? {href:episodeHref(next),label:next.episodeLabel || `Tập ${next.episodeNumber}`} : undefined}
             embedUrl={embedUrl}
             streamUrl={streamUrl}
             quality={selectedEpisode?.quality}

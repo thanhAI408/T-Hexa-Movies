@@ -63,7 +63,7 @@ test('watch recommendations, theater, share, channel and search filters work', a
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByLabel('Liên kết chia sẻ')).toHaveValue(new RegExp(video.id));
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.screenshot({ path: '.data/youtube-watch.png', fullPage: true });
+  await page.screenshot({ path: '.data/youtube-watch.png', fullPage: false });
   await page.locator('.yt-channel-link').click();
   await expect(page.locator('.yt-channel-heading')).toContainText('25 video');
   await expect(page.getByRole('link', { name: 'Đăng ký trên YouTube' })).toHaveAttribute('href', /sub_confirmation=1/);
