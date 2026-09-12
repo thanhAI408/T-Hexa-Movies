@@ -42,12 +42,7 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(56, 189, 248, 0.12), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 50%, rgba(230, 57, 80, 0.08), transparent),
-    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(99, 102, 241, 0.06), transparent),
-    linear-gradient(180deg, #060912 0%, #0a0f1a 100%);
-  background-attachment: fixed;
+  background-color: #050811;
   color: var(--foreground);
   font-family: "Segoe UI", "Inter", system-ui, sans-serif;
   text-rendering: optimizeLegibility;
@@ -729,3 +724,5 @@ a {
   .youtube-portal:hover .youtube-portal-play { transform: translateX(-50%); }
   .youtube-portal::before { display: none; }
 }
+
+.youtube-persistent{background:#111;color:#fff;border-radius:12px;box-shadow:0 8px 30px #0008}.youtube-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px;background:#181818;font-size:12px}.youtube-controls button{cursor:pointer;padding:4px 8px;border-radius:6px;background:#333}.youtube-controls label{display:flex;gap:5px;align-items:center}

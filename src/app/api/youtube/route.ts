@@ -7,13 +7,13 @@ const schema = z.object({
   id: z.string().regex(/^[\w-]{11}$/).optional(),
   channel: z.string().regex(/^UC[\w-]{22}$/).optional(),
   page: z.string().regex(/^[\w=-]{1,300}$/).optional(),
-  category: z.enum(['0', '10', '20', '22', '24', '25', '27', '28']).default('0'),
+  category: z.string().regex(/^(?:0|[1-9][0-9]?)$/).default('0'),
   order: z.enum(['relevance', 'date', 'viewCount']).default('relevance'),
   duration: z.enum(['any', 'short', 'medium', 'long']).default('any'),
 });
 const snippet = z.object({
   title: z.string().default(''), description: z.string().default(''), channelId: z.string().default(''),
-  channelTitle: z.string().default(''), publishedAt: z.string().default(''),
+  categoryId: z.string().optional(), channelTitle: z.string().default(''), publishedAt: z.string().default(''),
   thumbnails: z.record(z.string(), z.object({ url: z.string() })).default({}),
 });
 const row = z.object({ id: z.union([z.string(), z.object({ videoId: z.string().optional() })]), snippet,

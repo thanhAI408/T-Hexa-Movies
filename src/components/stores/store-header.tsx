@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Sun, Sunrise, Sunset, Moon, ChevronDown, Check, Sparkles } from "lucide-react";
+import { ArrowLeft, Sun, Sunrise, Sunset, Moon, ChevronDown, Check, Sparkles, Film } from "lucide-react";
 import { STORE_LIST, type StoreConfig } from "@/lib/stores/config";
+import { StoreLogo } from "@/components/stores/store-logo";
 import { prefetchStore, getLastStoreFilter } from "@/lib/stores/cache";
+import { useTheme } from "./theme-provider";
 
 interface StoreHeaderProps {
   store: StoreConfig;
@@ -30,6 +32,7 @@ function ThemeIcon({ slug, className, style }: { slug: string; className?: strin
 export function StoreHeader({ store }: StoreHeaderProps) {
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const themeMenuRef = useRef<HTMLDivElement>(null);
+  const { layoutMode, setLayoutMode } = useTheme();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -49,7 +52,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
         borderColor: store.theme.border,
       }}
     >
-      <div className="page-shell flex h-16 items-center justify-between gap-4">
+      <div className="page-shell flex min-h-16 flex-wrap items-center justify-between gap-3 py-2">
         {/* Left: Hub Navigation & Store Info */}
         <div className="flex items-center gap-3.5">
           <Link
@@ -66,7 +69,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               size={16}
               className="transition-transform duration-300 group-hover:-translate-x-1"
             />
-            <span className="hidden sm:inline">Vũ trụ</span> 4 Thời Gian
+            Tất cả kho phim
           </Link>
 
           <div
@@ -76,15 +79,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
 
           {/* Current Store Badge & Info */}
           <div className="flex items-center gap-2.5">
-            <div
-              className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-500 shadow-md"
-              style={{
-                background: store.theme.gradientAccent,
-                boxShadow: `0 4px 14px ${store.theme.glow}`,
-              }}
-            >
-              <ThemeIcon slug={store.slug} className="h-4.5 w-4.5 text-white" />
-            </div>
+            <StoreLogo slug={store.slug} size="sm" />
 
             <div>
               <div className="flex items-center gap-1.5">
@@ -94,7 +89,6 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                 >
                   {store.name}
                 </h1>
-                <span className="text-sm">{store.theme.emoji}</span>
               </div>
               <p className="hidden md:block text-[11px] font-medium" style={{ color: store.theme.textMuted }}>
                 {store.description}
@@ -103,9 +97,55 @@ export function StoreHeader({ store }: StoreHeaderProps) {
           </div>
         </div>
 
-        {/* Right: Quick Theme Switcher Dropdown */}
-        <div className="flex items-center gap-2" ref={themeMenuRef}>
-          <div className="relative">
+        {/* Right: Layout Switcher & Theme Dropdown */}
+        <div className="flex items-center gap-2.5">
+          {/* Interactive Layout Mode Toggle: Kiểu 1 (Toàn Cảnh) vs Kiểu 2 (Rạp 35mm) */}
+          <div
+            className="flex items-center gap-1 p-1 rounded-2xl border backdrop-blur-xl transition-all shadow-sm"
+            style={{
+              backgroundColor: store.theme.surface,
+              borderColor: store.theme.border,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setLayoutMode("cinematic")}
+              title="Kiểu 1: Điện Ảnh Toàn Cảnh (Cinematic Floating Glass)"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                layoutMode === "cinematic"
+                  ? "shadow-md scale-102"
+                  : "opacity-65 hover:opacity-100"
+              }`}
+              style={{
+                backgroundColor: layoutMode === "cinematic" ? store.theme.primary : "transparent",
+                color: layoutMode === "cinematic" ? store.theme.textInverse : store.theme.text,
+              }}
+            >
+              <Film size={13} />
+              <span className="hidden md:inline">Kiểu 1: Toàn Cảnh</span>
+              <span className="md:hidden">K.1</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLayoutMode("theater")}
+              title="Kiểu 2: Rạp Chiếu Hoàng Gia 35mm (Vintage Premiere Theater)"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                layoutMode === "theater"
+                  ? "shadow-md scale-102"
+                  : "opacity-65 hover:opacity-100"
+              }`}
+              style={{
+                backgroundColor: layoutMode === "theater" ? store.theme.primary : "transparent",
+                color: layoutMode === "theater" ? store.theme.textInverse : store.theme.text,
+              }}
+            >
+              <Sparkles size={13} />
+              <span className="hidden md:inline">Kiểu 2: Rạp 35mm</span>
+              <span className="md:hidden">K.2</span>
+            </button>
+          </div>
+
+          <div className="relative" ref={themeMenuRef}>
             <button
               type="button"
               onClick={() => setShowThemeMenu(!showThemeMenu)}
@@ -134,7 +174,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               >
                 <div className="px-3 py-2 border-b mb-1" style={{ borderColor: store.theme.border }}>
                   <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: store.theme.textMuted }}>
-                    Chọn trải nghiệm xem phim
+                    Chọn kho phim
                   </p>
                 </div>
 
@@ -150,14 +190,14 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                         href={targetUrl}
                         onMouseEnter={() => prefetchStore(item.slug)}
                         onClick={() => setShowThemeMenu(false)}
-                        className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-medium transition-all hover:scale-102"
+                        className="flex flex-wrap items-center justify-between gap-y-3 rounded-xl px-3 py-2.5 text-xs font-medium transition-all hover:scale-102"
                         style={{
                           background: isCurrent ? store.theme.primaryMuted : "transparent",
                           color: isCurrent ? store.theme.primary : store.theme.text,
                         }}
                       >
                         <div className="flex items-center gap-2.5">
-                          <span className="text-base">{item.theme.emoji}</span>
+                          <StoreLogo slug={item.slug} size="sm" showGlow={false} />
                           <div>
                             <p className="font-bold">{item.name}</p>
                             <p className="text-[10px] opacity-75">{item.effects.mood}</p>

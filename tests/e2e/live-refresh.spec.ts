@@ -46,7 +46,7 @@ test('global search refresh replaces results and recovers without losing the las
 test('filter dialog supports Escape and store theme is restored after leaving', async ({ page }) => {
   await page.goto('/stores');
   const original = await page.locator('body').evaluate(el => ({ background: el.style.background, color: el.style.color }));
-  await page.getByRole('link', { name: /Dạ Nguyệt Đêm trăng/ }).click();
+  await page.getByRole('link', { name: 'Bước Qua Cổng Vòm Dạ Nguyệt', exact: true }).click();
   await page.getByRole('button', { name: 'Bộ lọc', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Bộ lọc phim' })).toBeVisible();
   await page.keyboard.press('Tab');

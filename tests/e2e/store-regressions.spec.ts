@@ -20,7 +20,7 @@ test("player fails over from primary to VidSrc, VidLink, then a Vietnamese backu
   await expect(active).toHaveAttribute("data-playback-source", "vidlink");
   await expect(page.locator("iframe").first()).toHaveAttribute("src", /vidlink\.pro\/tv\/\d+\/1\/1/);
   await page.locator("iframe").first().dispatchEvent("error");
-  await expect(page.getByRole("heading", { name: "Tín hiệu luồng phát bị gián đoạn" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Video đang bị gián đoạn" })).toBeVisible();
   releaseBackups();
   await expect(active).toHaveAttribute("data-playback-source", "backup_vn");
   await expect(page.locator("iframe").first()).toHaveAttribute("src", "https://example.com/backup-player");

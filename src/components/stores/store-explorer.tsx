@@ -19,6 +19,7 @@ import {
   prefetchAllStores,
   type ExploreData,
 } from "@/lib/stores/cache";
+import { useTheme } from "./theme-provider";
 
 interface StoreExplorerProps {
   store: StoreConfig;
@@ -101,6 +102,7 @@ function MovieCardPoster({
 }
 
 function StoreExplorerContent({ store }: StoreExplorerProps) {
+  const { layoutMode } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -856,19 +858,43 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                 <a
                   key={movie.providerMovieId || movieSlug}
                   href={`/stores/${store.slug}/movie/${movieSlug}`}
-                  className="group relative flex flex-col rounded-2xl transition-all duration-400 hover:-translate-y-2 focus-visible:outline-none"
+                  className={`group relative flex flex-col transition-all duration-400 hover:-translate-y-2 focus-visible:outline-none ${
+                    layoutMode === "theater" ? "rounded-xl" : "rounded-2xl"
+                  }`}
                   style={{
                     boxShadow: "none",
                   }}
                 >
                   {/* Poster Image Container with resilient fallback */}
                   <div
-                    className="relative aspect-[2/3] w-full overflow-hidden rounded-2xl border transition-all duration-400 group-hover:shadow-2xl"
+                    className={`relative aspect-[2/3] w-full overflow-hidden transition-all duration-400 group-hover:shadow-2xl ${
+                      layoutMode === "theater"
+                        ? "rounded-xl border-2"
+                        : "rounded-2xl border"
+                    }`}
                     style={{
-                      borderColor: store.theme.border,
+                      borderColor: layoutMode === "theater" ? `${store.theme.primary}70` : store.theme.border,
                       background: store.theme.surface,
+                      boxShadow: layoutMode === "theater" ? `0 4px 20px ${store.theme.glow}` : "none",
                     }}
                   >
+                    {/* 35mm Film Top Sprocket Bar (Only in Theater Mode) */}
+                    {layoutMode === "theater" && (
+                      <div className="absolute top-0 left-0 right-0 z-20 h-4 bg-black/90 flex items-center justify-between px-2 border-b border-white/15 select-none pointer-events-none">
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 rounded-[1px] bg-white/40" />
+                          <span className="w-1.5 h-1.5 rounded-[1px] bg-white/40" />
+                          <span className="w-1.5 h-1.5 rounded-[1px] bg-white/40" />
+                        </div>
+                        <span className="text-[7px] font-mono font-bold tracking-widest text-amber-400/90">35MM</span>
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 rounded-[1px] bg-white/40" />
+                          <span className="w-1.5 h-1.5 rounded-[1px] bg-white/40" />
+                          <span className="w-1.5 h-1.5 rounded-[1px] bg-white/40" />
+                        </div>
+                      </div>
+                    )}
+
                     <MovieCardPoster
                       url={poster}
                       title={title}
@@ -891,15 +917,17 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                       >
                         <Play size={22} fill="white" className="ml-1 text-white" />
                       </div>
-                      <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] font-bold text-white tracking-wide backdrop-blur-md">
-                        Xem chi tiết
+                      <span className="rounded-full bg-black/70 px-3 py-1 text-[11px] font-bold text-white tracking-wide backdrop-blur-md border border-white/10">
+                        {layoutMode === "theater" ? "Vé Chi Tiết" : "Xem chi tiết"}
                       </span>
                     </div>
 
                     {/* Quality Badge (Top-Left) */}
                     {quality && (
                       <span
-                        className="absolute left-2.5 top-2.5 rounded-lg px-2.5 py-1 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-md shadow-md pointer-events-none"
+                        className={`absolute left-2.5 rounded-lg px-2 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider backdrop-blur-md shadow-md pointer-events-none ${
+                          layoutMode === "theater" ? "top-5 font-mono border border-amber-400/40" : "top-2.5"
+                        }`}
                         style={{ background: store.theme.gradientAccent }}
                       >
                         {quality}
@@ -908,14 +936,33 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
 
                     {/* Type Badge (Top-Right) */}
                     {(movie.type === "series" || movie.type === "animation" || movie.type === "tvshow") && (
-                      <span className="absolute right-2.5 top-2.5 rounded-lg bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 pointer-events-none">
+                      <span className={`absolute right-2.5 rounded-lg bg-black/80 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md border border-white/10 pointer-events-none ${
+                        layoutMode === "theater" ? "top-5 font-mono" : "top-2.5"
+                      }`}>
                         {movie.type === "series" ? "📺 Bộ" : movie.type === "animation" ? "🎨 Hoạt hình" : "📡 Show"}
                       </span>
                     )}
 
+                    {/* 35mm Film Bottom Sprocket Bar (Only in Theater Mode) */}
+                    {layoutMode === "theater" && (
+                      <div className="absolute bottom-0 left-0 right-0 z-20 h-3 bg-black/90 flex items-center justify-between px-2 border-t border-white/15 select-none pointer-events-none">
+                        <div className="flex gap-1">
+                          <span className="w-1 h-1 rounded-[1px] bg-white/30" />
+                          <span className="w-1 h-1 rounded-[1px] bg-white/30" />
+                        </div>
+                        <span className="text-[6px] font-mono text-white/40">SAFETY FILM</span>
+                        <div className="flex gap-1">
+                          <span className="w-1 h-1 rounded-[1px] bg-white/30" />
+                          <span className="w-1 h-1 rounded-[1px] bg-white/30" />
+                        </div>
+                      </div>
+                    )}
+
                     {/* Episode label at bottom if available */}
                     {movie.currentEpisode && (
-                      <span className="absolute bottom-2 left-2 right-2 truncate rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-medium text-white/90 text-center backdrop-blur-sm border border-white/10 pointer-events-none">
+                      <span className={`absolute left-2 right-2 truncate rounded-md bg-black/80 px-2 py-0.5 text-[10px] font-medium text-white/90 text-center backdrop-blur-sm border border-white/10 pointer-events-none ${
+                        layoutMode === "theater" ? "bottom-4 font-mono text-[9px]" : "bottom-2"
+                      }`}>
                         {movie.currentEpisode}
                       </span>
                     )}
@@ -924,16 +971,18 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                   {/* Title & Meta Info */}
                   <div className="mt-2.5 px-0.5 space-y-1">
                     <h3
-                      className="line-clamp-1 text-sm font-semibold leading-tight transition-colors duration-200 group-hover:text-amber-500"
+                      className={`line-clamp-1 text-sm leading-tight transition-colors duration-200 group-hover:text-amber-400 ${
+                        layoutMode === "theater" ? "font-bold tracking-tight font-serif" : "font-semibold tracking-tight"
+                      }`}
                       style={{ color: store.theme.text }}
                       title={title}
                     >
                       {title}
                     </h3>
                     <div className="flex items-center justify-between text-xs" style={{ color: store.theme.textMuted }}>
-                      <span className="font-semibold">{movie.year || "—"}</span>
+                      <span className={layoutMode === "theater" ? "font-mono font-bold" : "font-semibold"}>{movie.year || "—"}</span>
                       {movie.quality && (
-                        <span className="truncate max-w-[100px] text-[11px] opacity-80 font-medium">
+                        <span className="truncate max-w-[100px] text-[11px] opacity-80 font-medium font-mono">
                           {movie.quality}
                         </span>
                       )}
@@ -1072,10 +1121,10 @@ function StoreExplorerContent({ store }: StoreExplorerProps) {
                     {activeModal === "genre" && `Tất cả Thể Loại (${exploreData?.genresCount || 0})`}
                     {activeModal === "country" && `Tất cả Quốc Gia (${exploreData?.countriesCount || 0})`}
                     {activeModal === "year" && `Tất cả Năm Phát Hành (${exploreData?.yearsCount || 0})`}
-                    {activeModal === "all" && "Bộ Lọc Khám Phá Toàn Diện"}
+                    {activeModal === "all" && "Bộ lọc phim"}
                   </h3>
                   <p className="text-xs" style={{ color: store.theme.textMuted }}>
-                    Chọn tiêu chí để tìm kiếm phim chính xác
+                    Chọn thể loại, quốc gia hoặc năm phát hành.
                   </p>
                 </div>
               </div>

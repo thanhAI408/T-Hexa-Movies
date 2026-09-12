@@ -1,11 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import type { StoreConfig } from "@/lib/stores/config";
+
+export type StoreLayoutMode = "cinematic" | "theater";
 
 interface ThemeContextType {
   store: StoreConfig;
   theme: StoreConfig["theme"];
+  layoutMode: StoreLayoutMode;
+  setLayoutMode: (mode: StoreLayoutMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
@@ -23,7 +27,17 @@ interface StoreProviderProps {
   children: React.ReactNode;
 }
 
+function subscribeLayout(callback: () => void) { window.addEventListener('storage', callback); window.addEventListener('thexa-layout', callback); return () => { window.removeEventListener('storage', callback); window.removeEventListener('thexa-layout', callback); }; }
+function readLayout(): StoreLayoutMode { try { return localStorage.getItem('thexa_store_layout_mode') === 'theater' ? 'theater' : 'cinematic'; } catch { return 'cinematic'; } }
+
 export function StoreProvider({ store, children }: StoreProviderProps) {
+  const savedMode = useSyncExternalStore(subscribeLayout, readLayout, () => 'cinematic' as StoreLayoutMode);
+  const [override, setOverride] = useState<StoreLayoutMode | null>(null);
+  const layoutMode = override ?? savedMode;
+  const setLayoutMode = (mode: StoreLayoutMode) => {
+    setOverride(mode);
+    try { localStorage.setItem('thexa_store_layout_mode', mode); window.dispatchEvent(new Event('thexa-layout')); } catch { /* Keep the control usable when storage is blocked. */ }
+  };
   // Apply theme CSS variables to root
   useEffect(() => {
 
@@ -86,7 +100,7 @@ export function StoreProvider({ store, children }: StoreProviderProps) {
   }, [store]);
 
   return (
-    <ThemeContext.Provider value={{ store, theme: store.theme }}>
+    <ThemeContext.Provider value={{ store, theme: store.theme, layoutMode, setLayoutMode }}>
       <div
         className="min-h-screen transition-colors duration-500"
         style={{ background: store.theme.background, color: store.theme.text }}

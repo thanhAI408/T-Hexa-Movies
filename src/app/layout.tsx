@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
+import { InteractiveBackground } from "@/components/effects/interactive-background";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 
+import { YoutubePlaybackProvider } from "@/components/youtube-player";
 import "./globals.css";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -15,11 +17,11 @@ export const metadata: Metadata = {
     template: "%s | T-Hexa Movies",
   },
   description:
-    "Kho phim hợp nhất nhiều nguồn với tìm kiếm nhanh, phim chiếu rạp nổi bật và tự động chuyển máy chủ khi nguồn lỗi.",
+    "Tìm và xem phim từ nhiều nguồn. Lọc theo thể loại, quốc gia, năm phát hành và chọn nguồn phát phù hợp.",
   applicationName: "T-Hexa Movies",
   openGraph: {
     title: "T-Hexa Movies",
-    description: "Một kho phim, nhiều nguồn dự phòng, trải nghiệm xem liền mạch.",
+    description: "Tìm phim, chọn nguồn và xem trực tuyến trên T-Hexa.",
     type: "website",
     locale: "vi_VN",
     siteName: "T-Hexa Movies",
@@ -41,12 +43,15 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="vi">
-      <body className="min-h-screen bg-background text-foreground antialiased">
-        <div className="flex min-h-screen flex-col">
+      <body className="relative min-h-screen bg-background text-foreground antialiased">
+        <YoutubePlaybackProvider>
+        <InteractiveBackground />
+        <div className="relative z-10 flex min-h-screen flex-col">
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <SiteFooter />
         </div>
+        </YoutubePlaybackProvider>
       </body>
     </html>
   );

@@ -7,7 +7,7 @@ test('YouTube navigation, search, watch later, comments, history and mobile layo
     return route.fulfill({ json: q.get('mode') === 'comments' ? { items: [], comments: [{ id: 'c1', author: 'Người xem', text: '<script>test</script>', likes: 2 }] } : { items: [video], nextPageToken: q.has('page') ? undefined : q.get('mode') === 'video' ? undefined : 'page2' } });
   });
   await page.route('https://www.youtube-nocookie.com/**', route => route.fulfill({ body: '<html><body>Player fixture</body></html>', contentType: 'text/html' }));
-  await page.goto('/stores'); await page.getByRole('link', { name: /Khám phá YouTube/ }).click();
+  await page.goto('/stores'); await page.getByRole('link', { name: 'Vào Trung Tâm YouTube Ngay', exact: true }).click();
   await expect(page).toHaveURL(/\/youtube$/);
   await expect(page.getByRole('heading', { name: video.title })).toBeVisible();
   await page.getByRole('button', { name: `Xem sau: ${video.title}`, exact: true }).click();
@@ -32,7 +32,7 @@ test('missing API configuration keeps direct YouTube URL playback accessible', a
   await page.route('**/api/youtube?**', route => route.fulfill({ status: 503, json: { error: 'Danh mục chưa kết nối. Dán liên kết để xem.', code: 'NOT_CONFIGURED' } }));
   await page.goto('/youtube'); await expect(page.locator('.yt-empty[role=alert]')).toContainText('Danh mục chưa kết nối');
   await page.getByRole('textbox', { name: 'Tìm trên YouTube' }).fill('https://youtu.be/dQw4w9WgXcQ'); await page.getByRole('button', { name: 'Tìm video', exact: true }).click();
-  await expect(page.locator('iframe')).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0');
+  await expect(page.locator('iframe')).toHaveAttribute('src', /youtube-nocookie.com\/embed\/dQw4w9WgXcQ\?rel=0&autoplay=1/);
   await expect(page.getByRole('link', { name: 'Xem trên YouTube', exact: false })).toHaveAttribute('href', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 });
 test('desktop catalog preview uses independent YouTube chrome', async ({ page }) => {

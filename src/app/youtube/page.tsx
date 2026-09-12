@@ -7,6 +7,7 @@ import { Search, Play, Home, Clock, History, ArrowLeft, RefreshCw, ExternalLink,
 import { youtubeId, type YoutubeResult, type YoutubeVideo } from '@/lib/youtube/types';
 import { useVisibleRefresh } from '@/lib/use-visible-refresh';
 import { discoveryBatch } from '@/lib/youtube/discovery';
+import { YoutubePlayerSlot, useYoutubePlayback } from '@/components/youtube-player';
 import './youtube.css';
 
 const categories = [['0', 'Tất cả'], ['10', 'Âm nhạc'], ['20', 'Trò chơi'], ['24', 'Giải trí'], ['25', 'Tin tức'], ['27', 'Học tập'], ['28', 'Công nghệ'], ['22', 'Đời sống']];
@@ -20,19 +21,20 @@ function duration(value?: string) { const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(
 function Avatar({ video }: { video: YoutubeVideo }) {
   return <span className="yt-avatar">{video.channelThumbnail ? <Image unoptimized src={video.channelThumbnail} alt="" width={36} height={36} /> : video.channelTitle?.charAt(0) || '▶'}</span>;
 }
-function NextVideos({ id, saved, onSave }: { id: string; saved: YoutubeVideo[]; onSave: (video: YoutubeVideo) => void }) {
+function NextVideos({ id, categoryId, saved, onSave }: { id: string; categoryId?: string; saved: YoutubeVideo[]; onSave: (video: YoutubeVideo) => void }) {
   const [data, setData] = useState<YoutubeResult>();
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const { setQueue } = useYoutubePlayback();
   useEffect(() => {
     const abort = new AbortController();
-    fetch('/api/youtube?mode=popular', { signal: abort.signal }).then(async response => {
+    fetch(`/api/youtube?mode=popular${categoryId ? `&category=${categoryId}` : ''}`, { signal: abort.signal }).then(async response => {
       if (!response.ok) throw new Error('unavailable');
-      const result = await response.json(); if (!abort.signal.aborted) { setData(result); setFailed(false); }
+      const result = await response.json(); if (!abort.signal.aborted) { setData(result); setFailed(false); if (categoryId) setQueue(id, result.items); }
     }).catch(() => { if (!abort.signal.aborted) setFailed(true); });
     return () => abort.abort();
-  }, [attempt]);
-  return <aside className="yt-next" aria-label="Video tiếp theo"><div className="yt-chips"><span className="active">Video tiếp theo</span><Link href="/youtube">Khám phá</Link></div><p className="yt-muted yt-next-caption">Đang phổ biến tại Việt Nam</p>{data?.items.filter(video => video.id !== id).slice(0, 16).map(video => <Card key={video.id} video={video} saved={saved.some(item => item.id === video.id)} onSave={() => onSave(video)} />)}{failed ? <button className="yt-pill" onClick={() => setAttempt(value => value + 1)}>Tải lại video tiếp theo</button> : !data && <p role="status">Đang tải video tiếp theo…</p>}</aside>;
+  }, [attempt, id, categoryId, setQueue]);
+  return <aside className="yt-next" aria-label="Video tiếp theo"><div className="yt-chips"><span className="active">Video tiếp theo</span><Link href="/youtube">Khám phá</Link></div><p className="yt-muted yt-next-caption">{categoryId ? 'Cùng danh mục với video đang xem' : 'Đang phổ biến tại Việt Nam'}</p>{data?.items.filter(video => video.id !== id).slice(0, 16).map(video => <Card key={video.id} video={video} saved={saved.some(item => item.id === video.id)} onSave={() => onSave(video)} />)}{failed ? <button className="yt-pill" onClick={() => setAttempt(value => value + 1)}>Tải lại video tiếp theo</button> : !data && <p role="status">Đang tải video tiếp theo…</p>}</aside>;
 }
 function ShareDialog({ id, close }: { id: string; close: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -131,7 +133,7 @@ function YouTubeContent() {
     {menu && <button className="yt-scrim" aria-label="Đóng danh mục" onClick={() => setMenu(false)} />}
     <main className="yt-main">
       {notice && <div role="status" className="yt-notice">{notice}<button aria-label="Đóng thông báo" onClick={() => setNotice('')}><X size={16} /></button></div>}
-      {id ? <div className="yt-watch-layout"><div className="yt-watch"><div className="yt-player"><iframe key={id} src={`https://www.youtube-nocookie.com/embed/${id}?rel=0`} title={video?.title || 'Trình phát YouTube'} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></div>
+      {id ? <div className="yt-watch-layout"><div className="yt-watch"><YoutubePlayerSlot id={id} />
         <h1>{video?.title || 'Video YouTube'}</h1><div className="yt-watch-actions">{video?.channelId && <Link className="yt-channel-link" href={`/youtube?channel=${video.channelId}`}><Avatar video={video} />{video.channelTitle}</Link>}
           {video && <button className="yt-pill" onClick={() => toggle(video)}><Clock size={17} />{saved.some(item => item.id === id) ? 'Đã lưu' : 'Xem sau'}</button>}
           <button className="yt-pill" onClick={() => setShare(true)}><Share2 size={17} />Chia sẻ</button>
@@ -140,7 +142,7 @@ function YouTubeContent() {
           <a className="yt-pill" href={`https://www.youtube.com/watch?v=${id}`} target="_blank" rel="noreferrer">Xem trên YouTube <ExternalLink size={16} /></a></div>
         {video && <details className="yt-description"><summary>{count(video.views)} {video.views ? 'lượt xem · ' : ''}{video.publishedAt ? new Date(video.publishedAt).toLocaleDateString('vi-VN') : ''} · Mô tả</summary><p>{video.description || 'Không có mô tả.'}</p></details>}
         {current?.error && <p className="yt-muted">{current.error}</p>}{current?.data && !video && <p role="status">Video không còn công khai hoặc không khả dụng. Bạn có thể kiểm tra trên YouTube.</p>}
-        <Comments key={id} id={id} /></div><NextVideos id={id} saved={saved} onSave={toggle} /></div> : <>
+        <Comments key={id} id={id} /></div><NextVideos key={id} id={id} categoryId={video?.categoryId} saved={saved} onSave={toggle} /></div> : <>
         {!local && !q && !channel && <div className="yt-chips">{categories.map(([value, title]) => <Link className={value === category ? 'active' : ''} href={`/youtube?category=${value}`} key={value}>{title}</Link>)}</div>}
         <div className="yt-title"><div><p className="yt-eyebrow">{local ? 'THƯ VIỆN CỦA BẠN' : channel ? 'KÊNH YOUTUBE' : 'KHÁM PHÁ YOUTUBE'}</p><h1>{local ? tab === 'saved' ? 'Xem sau' : 'Lịch sử đã mở' : q ? `Kết quả cho “${q}”` : current?.data?.channel?.title || 'Phổ biến tại Việt Nam'}</h1></div>
           {q ? <div className="yt-filter-actions"><button className="yt-pill" aria-expanded={filters} onClick={() => setFilters(value => !value)}><SlidersHorizontal size={18} />Bộ lọc</button><select aria-label="Sắp xếp video" value={order} onChange={e => router.push(`/youtube?q=${encodeURIComponent(q)}&order=${e.target.value}&duration=${videoDuration}`)}><option value="relevance">Liên quan nhất</option><option value="date">Mới nhất</option><option value="viewCount">Lượt xem</option></select></div> : !local && <button className="yt-icon" aria-label="Tải lại danh sách" onClick={() => setRefresh(v => v + 1)}><RefreshCw size={19} /></button>}

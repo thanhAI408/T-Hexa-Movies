@@ -9,7 +9,7 @@ test("direct mode never loads an external player, including after stream failure
   await page.route("**/*.m3u8*", route => route.abort());
   await page.goto(watchUrl);
   await expect(page.getByRole("checkbox", { name: "Chỉ phát trực tiếp" })).toBeChecked();
-  await expect(page.getByRole("heading", { name: "Tín hiệu luồng phát bị gián đoạn" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Video đang bị gián đoạn" })).toBeVisible();
   await expect(page.locator("iframe")).toHaveCount(0);
   expect(embedRequests).toEqual([]);
 });
@@ -32,7 +32,7 @@ test("sandbox blocks popup and parent navigation after user activation", async (
   await page.goto(watchUrl);
   await page.getByRole("checkbox", { name: "Chỉ phát trực tiếp" }).uncheck();
   const frame = page.frameLocator("iframe");
-  await expect(page.getByText(/Đang kết nối tín hiệu/)).toHaveCount(0);
+  await expect(page.getByText(/Đang tải video/)).toHaveCount(0);
   await frame.getByRole("button", { name: "Play", exact: true }).press("Enter");
   await expect(frame.locator("#attempt")).toHaveAttribute("data-popup", "blocked");
   await expect(frame.locator("#attempt")).toHaveAttribute("data-navigation", "blocked");

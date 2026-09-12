@@ -1,7 +1,8 @@
 "use client";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Sparkles, Film, Heart } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { StoreLogo } from "@/components/stores/store-logo";
 
 export function SiteFooter() {
   const pathname = usePathname();
@@ -18,34 +19,38 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Trải nghiệm điện ảnh theo thời gian sống động và khác biệt nhất. Nguồn phim chất lượng cao, cập nhật hàng ngày.
+              Tìm và xem phim từ nhiều nguồn. Chọn kho hoặc dùng bộ lọc để tìm phim bạn muốn xem.
             </p>
           </div>
 
           {/* Col 2: 4 Thời Gian */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-              Vũ trụ 4 Thời Gian
+              Các kho phim
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
-                <Link href="/stores/binh-minh" className="transition hover:text-amber-400">
-                  🌅 Bình Minh
+                <Link href="/stores/binh-minh" className="flex items-center gap-2 transition hover:text-amber-400 group">
+                  <StoreLogo slug="binh-minh" size="sm" showGlow={false} className="h-5 w-5" />
+                  <span>Kho Bình Minh</span>
                 </Link>
               </li>
               <li>
-                <Link href="/stores/ban-mai" className="transition hover:text-sky-400">
-                  ☀️ Ban Mai
+                <Link href="/stores/ban-mai" className="flex items-center gap-2 transition hover:text-sky-400 group">
+                  <StoreLogo slug="ban-mai" size="sm" showGlow={false} className="h-5 w-5" />
+                  <span>Kho Ban Mai</span>
                 </Link>
               </li>
               <li>
-                <Link href="/stores/hoang-hon" className="transition hover:text-orange-400">
-                  🌆 Hoàng Hôn
+                <Link href="/stores/hoang-hon" className="flex items-center gap-2 transition hover:text-orange-400 group">
+                  <StoreLogo slug="hoang-hon" size="sm" showGlow={false} className="h-5 w-5" />
+                  <span>Kho Hoàng Hôn</span>
                 </Link>
               </li>
               <li>
-                <Link href="/stores/da-nguyet" className="transition hover:text-indigo-400">
-                  🌙 Dạ Nguyệt
+                <Link href="/stores/da-nguyet" className="flex items-center gap-2 transition hover:text-indigo-400 group">
+                  <StoreLogo slug="da-nguyet" size="sm" showGlow={false} className="h-5 w-5" />
+                  <span>Kho Dạ Nguyệt</span>
                 </Link>
               </li>
             </ul>
@@ -64,12 +69,12 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/chieu-rap" className="transition hover:text-white">
-                  Phim Chiếu Rạp
+                  Phim chiếu rạp
                 </Link>
               </li>
               <li>
                 <Link href="/tim-kiem" className="transition hover:text-white">
-                  Tìm kiếm thông minh
+                  Tìm phim
                 </Link>
               </li>
             </ul>
@@ -81,16 +86,16 @@ export function SiteFooter() {
               Thông tin
             </h4>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Dữ liệu được tổng hợp từ các API công khai phục vụ mục đích học tập và giải trí. Video phát trực tiếp từ các nguồn lưu trữ đám mây.
+              Thông tin phim và video được cung cấp bởi các nguồn bên ngoài. Nội dung và chất lượng phát có thể thay đổi tùy nguồn.
             </p>
           </div>
         </div>
 
         {/* Bottom copyright */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} T-Hexa Movies. Thiết kế đỉnh cao bởi Antigravity.</p>
+          <p>© {new Date().getFullYear()} T-Hexa Movies.</p>
           <div className="flex items-center gap-1 text-slate-400">
-            <span>Thưởng thức phim chất lượng tuyệt đỉnh</span>
+            <span>Chúc bạn xem phim vui vẻ.</span>
             <Sparkles size={14} className="text-amber-400" />
           </div>
         </div>

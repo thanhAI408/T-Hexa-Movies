@@ -38,3 +38,12 @@ Không có key: thông báo danh mục chưa kết nối; vẫn mở iframe khi 
 - Ảnh đại diện kênh thật trên thẻ video; trang kênh có ảnh bìa, số đăng ký, số video và mô tả. Lấy video từ playlist uploads của kênh thay vì search.list, có phân trang; ảnh kênh lỗi không làm mất danh sách video.
 - Thích, đăng ký và danh sách phát mở YouTube. Chưa có OAuth, Shorts riêng, thông báo tài khoản hoặc đồng bộ thư viện với Google. Cách phát bằng iframe chính thức giữ nguyên.
 - Kiểm thử bổ sung cho thứ tự hydrate, pagination uploads, lỗi artwork, bộ lọc, hộp chia sẻ và chế độ rạp hát không tải lại trình phát.
+
+## Phát liên tục và trình phát thu nhỏ (12/09/2026)
+
+- Dùng YouTube IFrame API chính thức, autoplay và playsinline. Trình duyệt có thể yêu cầu thao tác phát khi mở trực tiếp một liên kết chưa có tương tác.
+- Player nằm ở root layout; thu nhỏ, đổi chế độ rạp hát, tìm phim và chuyển bài giữ nguyên iframe. Đóng player dừng phiên phát. Mở trang xem phim hoặc bắt đầu video HTML5 tạm dừng YouTube để tránh chồng âm thanh.
+- Tự chuyển tiếp mặc định bật; chọn video chưa xem trong phiên từ danh mục YouTube của video hiện tại. Đây là gợi ý cùng danh mục, không phải đề xuất cá nhân hóa. Thiếu dữ liệu/API hoặc hết hàng đợi thì không tự chọn video khác chủ đề.
+- Chỉ thử khôi phục khi YouTube báo buffering liên tục 15 giây, giữ vị trí đang xem và giới hạn tự thử. Không tự phát lại khi người dùng tạm dừng. Có nút Thử lại khi lỗi hoặc bị chặn phát tự động.
+- Hiệu ứng đèn/bụi không chạy trên trang YouTube và trang xem phim. Thanh đổi giao diện/kho hỗ trợ xuống dòng trên mobile.
+- `tests/e2e/youtube-playback.spec.ts` dùng IFrame API giả lập để xác nhận autoplay, bảo toàn iframe, kết thúc video, thu nhỏ, pause và khôi phục buffering. Kiểm tra phát thật được thực hiện riêng; test giả lập không chứng minh upstream luôn phát được.

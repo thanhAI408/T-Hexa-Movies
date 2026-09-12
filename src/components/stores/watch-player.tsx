@@ -47,7 +47,7 @@ export function WatchPlayer(props: WatchPlayerProps) {
     <label className="flex items-start gap-3 rounded-xl border p-3 text-sm" style={{ color: props.store.theme.text, borderColor: props.store.theme.border }}>
       <input type="checkbox" checked={directOnly} onChange={event => setDirectOnly(event.target.checked)} className="mt-1" />
       <span>Chỉ phát trực tiếp
-        <span className="block text-xs opacity-75">Không tải player bên thứ ba. Bỏ chọn để dùng đủ nguồn dự phòng; các nguồn đó có thể chứa quảng cáo.</span>
+        <span className="block text-xs opacity-75">Chỉ dùng nguồn phát trực tiếp. Bỏ chọn để mở thêm nguồn dự phòng; một số nguồn có thể có quảng cáo.</span>
       </span>
     </label>
     <PlaybackSession key={`${props.movieSlug}:${props.fallbackSources?.[0]?.id}:${props.seasonNumber}:${props.episodeNumber}:${directOnly}`} {...props} directOnly={directOnly} />
@@ -314,7 +314,7 @@ function PlaybackSession({
             {backupsPending ? "Đang tìm nguồn phát trực tiếp" : "Không tìm thấy nguồn phát phù hợp"}
           </h3>
           <p className="text-xs max-w-sm text-slate-400" style={{ color: store.theme.textMuted }}>
-            {directOnly ? "Player bên thứ ba đang bị tắt. Chỉ các luồng video trực tiếp được phép tải." : "Tập phim này chưa có nguồn khả dụng. Vui lòng chọn tập hoặc máy chủ khác."}
+            {directOnly ? "Bạn đang chọn chỉ phát trực tiếp. Có thể bỏ chọn tùy chọn này để thử thêm nguồn khác." : "Chưa có nguồn phát cho tập này. Bạn vui lòng chọn tập khác hoặc thử lại sau."}
           </p>
         </div>
       </div>
@@ -423,7 +423,7 @@ function PlaybackSession({
               style={{ borderTopColor: store.theme.primary, borderRightColor: store.theme.accent }}
             />
             <p className="mt-4 text-xs font-bold uppercase tracking-widest" style={{ color: store.theme.text }}>
-              Đang kết nối tín hiệu ({currentSource.name})...
+              Đang tải video ({currentSource.name})...
             </p>
           </div>
         )}
@@ -441,10 +441,10 @@ function PlaybackSession({
               <AlertCircle size={28} />
             </div>
             <h3 className="text-base font-bold" style={{ color: store.theme.text }}>
-              Tín hiệu luồng phát bị gián đoạn
+              Video đang bị gián đoạn
             </h3>
             <p className="mt-1 text-xs max-w-md" style={{ color: store.theme.textMuted }}>
-              Máy chủ hiện tại ({currentSource.name}) không phản hồi. Bạn có thể chọn nhanh một trong các máy chủ dự phòng dưới đây:
+              Chưa thể phát video từ {currentSource.name}. Bạn hãy thử nguồn khác bên dưới hoặc tải lại trang.
             </p>
 
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
