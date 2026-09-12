@@ -12,6 +12,10 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(appUrl),
+  icons: {
+    icon: [{ url: "/favicon.ico?v=thexa-20260912", sizes: "16x16 32x32 48x48 64x64 256x256", type: "image/x-icon" }],
+    shortcut: "/favicon.ico?v=thexa-20260912",
+  },
   title: {
     default: "T-Hexa Movies — Xem phim nhanh, nhiều nguồn",
     template: "%s | T-Hexa Movies",
