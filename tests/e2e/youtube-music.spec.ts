@@ -215,3 +215,25 @@ test("lofi context and the iframe survive mini player browsing and automatic nex
   await aligned(page);
   expect(errors).toEqual([]);
 });
+
+test("recommendations wait for music metadata instead of briefly showing general trending videos", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const ready = new Promise<void>((resolve) => (release = resolve));
+  const requests: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/api/youtube?")) requests.push(r.url());
+  });
+  await page.route("**/api/youtube?mode=video&**", async (route) => {
+    await ready;
+    await route.fulfill({ json: { items: [first] } });
+  });
+  await page.goto("/youtube?v=" + first.id + "&music=lofi");
+  await expect(page.locator("iframe")).toHaveCount(1);
+  expect(requests.some((url) => url.includes("mode=popular"))).toBe(false);
+  await expect(page.locator(".yt-next .yt-card")).toHaveCount(0);
+  release();
+  await expect(page.locator(".yt-next .yt-card")).toHaveCount(1);
+  expect(requests.some((url) => url.includes("mode=popular"))).toBe(false);
+});

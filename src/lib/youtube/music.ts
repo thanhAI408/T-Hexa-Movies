@@ -27,7 +27,7 @@ export const MUSIC_GENRES = [
   {
     id: "uk-us",
     label: "UK / US",
-    query: "English pop music official",
+    query: "UK US pop hits",
     language: "en",
   },
   { id: "chill", label: "Chill", query: "nhạc chill thư giãn", language: "vi" },
@@ -125,6 +125,12 @@ export function matchesMusicGenre(video: YoutubeVideo, genre: MusicGenre) {
   if (genre === "lofi") return /\blo[ -]?fi\b/.test(title);
   if (genre === "remix") return /remix|vinahouse|nonstop/.test(title);
   if (genre === "uk-us") {
+    if (
+      /\benglish\b|\buk[ /-]*us\b|\bus[ /-]*uk\b|tieng anh|billboard|spotify pop/i.test(
+        title,
+      )
+    )
+      return true;
     const language = video.defaultAudioLanguage || video.defaultLanguage;
     if (language) return /^en(?:-|$)/i.test(language);
     return /\benglish\b|\buk[ /-]*us\b/.test(title);

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-const video = { id: 'dQw4w9WgXcQ', title: 'Một chuyến đi thật đẹp', description: 'Khám phá thế giới\nMỗi ngày một điều mới.', channelId: 'UCabcdefghijklmnopqrstuv', channelTitle: 'Khám phá', publishedAt: '2026-09-01T00:00:00Z', views: '123400', duration: 'PT4M12S' };
+const video = { categoryId: '10', id: 'dQw4w9WgXcQ', title: 'Một chuyến đi thật đẹp', description: 'Khám phá thế giới\nMỗi ngày một điều mới.', channelId: 'UCabcdefghijklmnopqrstuv', channelTitle: 'Khám phá', publishedAt: '2026-09-01T00:00:00Z', views: '123400', duration: 'PT4M12S' };
 test('YouTube navigation, search, watch later, comments, history and mobile layout', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.route('**/api/youtube?**', route => {
@@ -47,7 +47,7 @@ test('watch recommendations, theater, share, channel and search filters work', a
   const nextVideo = { ...video, id: 'jNQXAC9IVRw', title: 'Video tiếp theo thật' };
   await page.route('**/api/youtube?**', route => {
     const query = new URL(route.request().url()).searchParams;
-    return route.fulfill({ json: { items: query.get('mode') === 'popular' ? [video, nextVideo] : [video], ...(query.get('mode') === 'channel' ? { channel: { title: 'Khám phá', description: 'Giới thiệu kênh', thumbnail: '', subscribers: '1200', videoCount: '25' } } : {}) } });
+    return route.fulfill({ json: { items: ['popular','music'].includes(query.get('mode') || '') ? [video, nextVideo] : [video], ...(query.get('mode') === 'channel' ? { channel: { title: 'Khám phá', description: 'Giới thiệu kênh', thumbnail: '', subscribers: '1200', videoCount: '25' } } : {}) } });
   });
   let loads = 0;
   await page.route('https://www.youtube-nocookie.com/**', route => { loads++; return route.fulfill({ body: '<html>Player</html>', contentType: 'text/html' }); });

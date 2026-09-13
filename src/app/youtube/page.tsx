@@ -146,6 +146,7 @@ function NextVideos({
   const [attempt, setAttempt] = useState(0);
   const { setQueue } = useYoutubePlayback();
   useEffect(() => {
+    if (!categoryId) return;
     const abort = new AbortController();
     fetch(
       categoryId === "10"
@@ -759,7 +760,7 @@ function YouTubeContent() {
               <Comments key={id} id={id} />
             </div>
             <NextVideos
-              key={id}
+              key={`${id}:${video?.categoryId || "pending"}:${playbackGenre || ""}`}
               id={id}
               categoryId={video?.categoryId}
               genre={playbackGenre}

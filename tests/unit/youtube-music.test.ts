@@ -91,7 +91,7 @@ describe("music discovery and ranking", () => {
       videoEmbeddable: "true",
       videoSyndicated: "true",
       videoDuration: "long",
-      order: "viewCount",
+      order: "relevance",
       pageToken: "page2",
       relevanceLanguage: "en",
       regionCode: "VN",

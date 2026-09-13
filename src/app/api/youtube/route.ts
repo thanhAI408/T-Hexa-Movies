@@ -219,7 +219,8 @@ export async function GET(request: Request) {
             videoEmbeddable: "true",
             videoSyndicated: "true",
             q: musicQuery(genre.id, p.q),
-            order: p.order === "hot" ? "viewCount" : p.order,
+            // First retrieve relevant recent songs; rank their momentum below.
+            order: p.order === "hot" ? "relevance" : p.order,
             videoDuration: p.duration,
             regionCode: "VN",
             relevanceLanguage: genre.language,
