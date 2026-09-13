@@ -173,6 +173,36 @@ export function MovieSessionTools({
   useEffect(() => {
     if (report) dialog.current?.showModal();
   }, [report]);
+  useEffect(() => {
+    if (embedded || locked || report || resume > 0) return;
+    let lastSeek = 0;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.closest('input, textarea, select, button, a, [role="textbox"], [role="slider"], dialog'))) return;
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.code !== "Space" && event.key !== " ") return;
+      const video = videoRef.current;
+      if (!video || video.readyState === 0) return;
+      event.preventDefault();
+      if (event.code === "Space" || event.key === " ") {
+        // Holding Space must not repeatedly toggle playback.
+        if (!event.repeat) {
+          if (video.paused) void video.play().catch(() => setStatus("Bấm nút phát trong video để tiếp tục."));
+          else video.pause();
+        }
+        return;
+      }
+      // Native keyboard repeat stops immediately on release or loss of focus.
+      const now = performance.now();
+      if (event.repeat && now - lastSeek < 120) return;
+      lastSeek = now;
+      const end = Number.isFinite(video.duration) ? video.duration : video.seekable.length ? video.seekable.end(video.seekable.length - 1) : video.currentTime;
+      const start = !Number.isFinite(video.duration) && video.seekable.length ? video.seekable.start(0) : 0;
+      video.currentTime = Math.max(start, Math.min(end, video.currentTime + (event.key === "ArrowRight" ? 10 : -10)));
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [embedded, locked, report, resume, sourceKey, videoRef]);
   function chooseResume(position: number) {
     const video = videoRef.current;
     if (!video || video.readyState === 0) {
@@ -272,6 +302,7 @@ export function MovieSessionTools({
           </Link>
         )}
       </div>
+      {!embedded && <p className="text-xs opacity-75">Bàn phím: ← / → tua 10 giây · Giữ phím để tua liên tục · Phím cách tạm dừng / phát tiếp.</p>}
       {!embedded && nextEpisode && (
         <label>
           <input
