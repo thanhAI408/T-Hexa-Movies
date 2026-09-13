@@ -9,7 +9,7 @@ import {
   Sparkles,
   Play,
   Music2,
-  Gamepad2,
+  Mic2,
   Film,
   Compass,
   ShieldCheck,
@@ -320,35 +320,42 @@ export default function StoresPage() {
               </form>
 
               {/* QUICK DISCOVERY CATEGORY CHIPS */}
-              <div className="flex flex-wrap items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1" role="group" aria-label="Khám phá nhanh">
                 <span className="text-[11px] font-semibold text-slate-400 mr-1">Khám phá nhanh:</span>
                 <Link
-                  href="/youtube?category=10"
+                  href="/youtube?q=nh%E1%BA%A1c%20phim%20OST"
                   className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-300 transition-all hover:scale-105 hover:border-amber-400 hover:bg-amber-500/25"
                 >
                   <Music2 size={12} />
                   <span>Nhạc & OST Phim</span>
                 </Link>
                 <Link
-                  href="/youtube?category=24"
+                  href="/youtube?scope=film&q=trailer%20%7C%20phim%20ng%E1%BA%AFn"
                   className="inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-[11px] font-semibold text-rose-300 transition-all hover:scale-105 hover:border-rose-400 hover:bg-rose-500/25"
                 >
                   <Film size={12} />
                   <span>Trailer & Phim ngắn</span>
                 </Link>
                 <Link
-                  href="/youtube?category=20"
+                  href="/youtube?music=chill"
                   className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-[11px] font-semibold text-purple-300 transition-all hover:scale-105 hover:border-purple-400 hover:bg-purple-500/25"
                 >
-                  <Gamepad2 size={12} />
-                  <span>Trò Chơi</span>
+                  <Music2 size={12} />
+                  <span>Nhạc thư giãn</span>
                 </Link>
                 <Link
-                  href="/youtube?mode=popular"
+                  href="/youtube?music=remix"
                   className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-300 transition-all hover:scale-105 hover:border-emerald-400 hover:bg-emerald-500/25"
                 >
                   <Flame size={12} />
-                  <span>Xu Hướng</span>
+                  <span>Nhạc Remix</span>
+                </Link>
+                <Link
+                  href="/youtube?q=karaoke"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-[11px] font-semibold text-sky-300 transition-all hover:scale-105 hover:border-sky-400 hover:bg-sky-500/25"
+                >
+                  <Mic2 size={12} />
+                  <span>Nhạc Karaoke</span>
                 </Link>
               </div>
             </div>

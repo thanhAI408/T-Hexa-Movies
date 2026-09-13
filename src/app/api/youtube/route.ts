@@ -328,6 +328,7 @@ export async function GET(request: Request) {
           videoEmbeddable: "true",
           videoSyndicated: "true",
           q: p.q,
+          ...(p.category !== "0" ? {videoCategoryId:p.category} : {}),
           order: p.order === "hot" ? "viewCount" : p.order,
           videoDuration: p.duration,
           relevanceLanguage: "vi",

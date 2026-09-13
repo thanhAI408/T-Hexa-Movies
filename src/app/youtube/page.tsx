@@ -392,6 +392,7 @@ function YouTubeContent() {
   const [theater, setTheater] = useState(false);
   const [share, setShare] = useState(false);
   const [filters, setFilters] = useState(false);
+  const filmSearch = params.get("scope") === "film";
   const videoDuration = params.get("duration") || "any";
   const [menu, setMenu] = useState(false);
   const [notice, setNotice] = useState("");
@@ -414,10 +415,12 @@ function YouTubeContent() {
       ? { mode: "video", id }
       : channel
         ? { mode: "channel", channel }
-        : { mode: "music", music: genre.id, q, order, duration: videoDuration },
+        : filmSearch
+          ? { mode: "search", category: "1", q: q || "trailer | phim ngắn", order, duration: videoDuration }
+          : { mode: "music", music: genre.id, q, order, duration: videoDuration },
   ).toString();
   const filterHref = (patch: Record<string, string>) =>
-    `/youtube?${new URLSearchParams({ ...(q ? { q } : {}), order, duration: videoDuration, music: genre.id, ...patch })}`;
+    `/youtube?${new URLSearchParams({ ...(q ? { q } : {}), order, duration: videoDuration, ...(filmSearch ? {scope:"film"} : {music:genre.id}), ...patch })}`;
   const [state, setState] = useState<{
     key: string;
     data?: YoutubeResult;
@@ -595,7 +598,7 @@ function YouTubeContent() {
               router.push(
                 youtubeId(input)
                   ? `/youtube?v=${youtubeId(input)}`
-                  : `/youtube?${new URLSearchParams({ q: input, ...(genre.id !== "all" ? { music: genre.id } : {}) })}`,
+                  : `/youtube?${new URLSearchParams({ q: input, ...(filmSearch ? {scope:"film"}:{}), ...(genre.id !== "all" ? { music: genre.id } : {}) })}`,
               );
           }}
         >
@@ -770,7 +773,7 @@ function YouTubeContent() {
           </div>
         ) : (
           <>
-            {!local && !channel && (
+            {!local && !channel && !filmSearch && (
               <nav className="yt-chips" aria-label="Thể loại nhạc">
                 {MUSIC_GENRES.map((item) => (
                   <Link
@@ -874,7 +877,7 @@ function YouTubeContent() {
                 </p>
               </div>
             )}
-            {!local && !channel && (
+            {!local && !channel && !filmSearch && (
               <p className="yt-music-caption">
                 {order === "hot"
                   ? "Đang hot: ưu tiên lượt xem theo tuổi video trong kết quả. Với thể loại hoặc từ khóa, tìm trong 90 ngày gần đây."
@@ -978,7 +981,7 @@ function YouTubeContent() {
                 <Card
                   key={video.id}
                   video={video}
-                  genre={!local && !channel ? genre.id : undefined}
+                  genre={!local && !channel && !filmSearch ? genre.id : undefined}
                   saved={saved.some((item) => item.id === video.id)}
                   onSave={() => toggle(video)}
                 />
