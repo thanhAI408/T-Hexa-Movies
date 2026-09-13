@@ -61,6 +61,7 @@ export const STORE_NAV_ITEMS = [
 export const PRIMARY_NAV = [
   { href: "/stores", label: "Kho phim" },
   { href: "/youtube", label: "YouTube ▶" },
+  { href: "/tro-ly-phim", label: "Trợ lý AI tìm phim" },
   { href: "/stores/binh-minh", label: "Bình Minh" },
   { href: "/stores/ban-mai", label: "Ban Mai" },
   { href: "/stores/hoang-hon", label: "Hoàng Hôn" },
@@ -162,6 +163,7 @@ export function SiteHeader() {
           </Suspense>
         </div>
 
+        <Link href="/tro-ly-phim" className="flex shrink-0 items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-200" aria-label="Trợ lý AI tìm phim"><Sparkles size={15} /><span>Hỏi AI</span></Link>
         {/* Mobile Menu */}
         <MobileMenu items={PRIMARY_NAV} />
       </div>

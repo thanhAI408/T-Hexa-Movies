@@ -44,7 +44,7 @@ export function InteractiveBackground() {
   const reduced = (()=>{try{return JSON.parse(preferences).reduced===true;}catch{return false;}})();
   useEffect(()=>{document.documentElement.dataset.reducedEffects=String(reduced);return()=>{delete document.documentElement.dataset.reducedEffects;};},[reduced]);
   const hydrated = useSyncExternalStore(subscribeHydration, () => true, () => false);
-  return hydrated && !reduced && pathname !== "/youtube" && !pathname.includes("/watch/") && !pathname.startsWith("/xem/") ? <HydratedBackground /> : null;
+  return hydrated && !reduced && pathname !== "/youtube" && pathname !== "/tro-ly-phim" && !pathname.includes("/watch/") && !pathname.startsWith("/xem/") ? <HydratedBackground /> : null;
 }
 function HydratedBackground() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

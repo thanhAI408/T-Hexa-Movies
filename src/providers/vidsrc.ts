@@ -4,7 +4,7 @@ import type { MovieProvider } from "./types";
 import { buildVidLinkEmbed, buildVidSrcEmbed } from "@/lib/streaming/fallback";
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY || "e9e9d8da18ae29fc430845952232787c";
-const tmdbItem = z.object({
+export const tmdbItem = z.object({
   id: z.number().int().positive(), media_type: z.enum(["movie", "tv", "person"]).optional(),
   title: z.string().optional(), name: z.string().optional(), original_title: z.string().optional(), original_name: z.string().optional(),
   release_date: z.string().optional(), first_air_date: z.string().optional(), overview: z.string().nullable().optional(),
@@ -22,11 +22,11 @@ const genres: Record<string, number> = { "hanh-dong": 28, "phieu-luu": 12, "hoat
 const countries: Record<string, string> = { "han-quoc": "KR", "trung-quoc": "CN", "au-my": "US", "nhat-ban": "JP", "thai-lan": "TH", "viet-nam": "VN", "anh": "GB", "phap": "FR", "hong-kong": "HK", "dai-loan": "TW", "an-do": "IN" };
 export function normalizedMovieName(value: string) { return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
 
-async function fetchTmdb(endpoint: string, params: Record<string, string | number> = {}) {
+export async function fetchTmdb(endpoint: string, params: Record<string, string | number> = {}, signal?: AbortSignal) {
   const query = new URLSearchParams({ api_key: TMDB_API_KEY, language: "vi-VN" });
   for (const [key, value] of Object.entries(params)) query.set(key, String(value));
   try {
-    const response = await fetch(`https://api.themoviedb.org/3${endpoint}?${query}`, { signal: AbortSignal.timeout(6500), next: { revalidate: 3600 } });
+    const response = await fetch(`https://api.themoviedb.org/3${endpoint}?${query}`, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(6500)]) : AbortSignal.timeout(6500), next: { revalidate: 3600 } });
     if (response.status === 404) return null;
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.json();
@@ -36,7 +36,7 @@ async function fetchTmdb(endpoint: string, params: Record<string, string | numbe
   }
 }
 
-function normalize(item: TmdbItem, provider: "vidsrc" | "vidlink", mediaType: "movie" | "tv"): ProviderMovieInput {
+export function normalize(item: TmdbItem, provider: "vidsrc" | "vidlink", mediaType: "movie" | "tv"): ProviderMovieInput {
   const ids = item.genre_ids || item.genres?.map(g => g.id) || [];
   const countryCodes = item.origin_country || item.production_countries?.map(c => c.iso_3166_1) || [];
   const date = (mediaType === "tv" ? item.first_air_date : item.release_date) || "";
