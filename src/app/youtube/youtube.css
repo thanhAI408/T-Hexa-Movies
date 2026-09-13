@@ -9,3 +9,15 @@
 @media(max-width:1000px){.yt-watch-layout{grid-template-columns:minmax(0,1fr)}.yt-next .yt-card{grid-template-columns:200px minmax(0,1fr)}.yt-theater .yt-next{display:block}.yt-filter-panel{align-items:flex-start;flex-direction:column;gap:12px}.yt-channel-heading h2{font-size:28px}}
 @media(max-width:760px){.yt-header{height:110px;padding:10px 14px;gap:8px}.yt-sidebar{top:110px;width:220px}.yt-main{margin-left:0;padding:12px 14px 40px}.yt-scrim{display:block}.yt-chips{top:110px}.yt-results-list .yt-card{grid-template-columns:minmax(140px,40%) minmax(0,1fr);gap:12px}.yt-results-list h3{font-size:15px}.yt-results-list .yt-card-description{display:none}.yt-results-list .yt-card-text>.yt-muted{margin-top:4px}.yt-filter-actions{gap:6px}.yt-filter-actions .yt-pill{font-size:0;padding:10px}.yt-filter-actions .yt-pill svg{width:18px}.yt-title h1{font-size:18px}.yt-channel-heading{gap:16px;align-items:flex-start}.yt-channel-heading>img{width:80px;height:80px}.yt-channel-heading h2{font-size:24px}.yt-channel-banner{height:110px}.yt-next .yt-card{grid-template-columns:160px minmax(0,1fr)}.yt-watch-actions .yt-channel-link{width:100%;margin-bottom:8px}.yt-watch h1{font-size:19px}}
 @media(max-width:480px){.yt-results-list .yt-card{display:block}.yt-results-list .yt-card-info{margin-top:12px}.yt-results-list .yt-card-info>.yt-avatar{display:grid}.yt-next .yt-card{grid-template-columns:145px minmax(0,1fr)}.yt-next h3{font-size:13px}.yt-watch-page .yt-main{padding-inline:10px}.yt-share{padding:18px}}
+
+/* Align the player with the first recommendation, even after the list grows. */
+.yt-watch-layout > .yt-watch{margin:0;align-self:start;max-width:none}
+.yt-theater .yt-watch-layout{max-width:1500px}
+.yt-player{min-height:200px;margin-bottom:60px;scroll-margin-top:76px}
+.yt-music-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.yt-music-filters select{background:#272727;color:#eee;border-radius:8px;padding:10px 12px;min-height:40px;font-size:13px;max-width:100%}
+.yt-music-caption{color:#aaa;font-size:13px;line-height:1.6;margin:-12px 0 22px;max-width:850px}
+.yt-chips .active{background:#f1f1f1;color:#111}
+.yt-next-genres{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;font-size:13px}
+.yt-next-genres a{padding:8px 12px;border-radius:20px;background:#272727}
+@media(max-width:760px){.yt-title{flex-wrap:wrap;gap:12px}.yt-music-filters{width:100%}.yt-music-filters select{flex:1;min-width:120px}.yt-player{scroll-margin-top:125px}.yt-music-caption{margin-top:0}}
