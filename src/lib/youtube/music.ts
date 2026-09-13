@@ -118,6 +118,19 @@ export function musicQuery(genre: MusicGenre, query: string) {
     : config.query;
 }
 /** Ranking applies to the returned candidate pool, not a claim about YouTube's global chart. */
+export function matchesMusicGenre(video: YoutubeVideo, genre: MusicGenre) {
+  const title = plain(video.title);
+  // View-count search can broaden the matches. Require concrete evidence for
+  // these categories instead of labeling every upstream search hit as a match.
+  if (genre === "lofi") return /\blo[ -]?fi\b/.test(title);
+  if (genre === "remix") return /remix|vinahouse|nonstop/.test(title);
+  if (genre === "uk-us") {
+    const language = video.defaultAudioLanguage || video.defaultLanguage;
+    if (language) return /^en(?:-|$)/i.test(language);
+    return /\benglish\b|\buk[ /-]*us\b/.test(title);
+  }
+  return true;
+}
 export function rankMusic(
   videos: YoutubeVideo[],
   order: MusicOrder,

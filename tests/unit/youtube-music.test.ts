@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/youtube/route";
-import { inferMusicGenre, musicQuery, rankMusic } from "@/lib/youtube/music";
+import {
+  inferMusicGenre,
+  musicQuery,
+  rankMusic,
+  matchesMusicGenre,
+} from "@/lib/youtube/music";
 import type { YoutubeVideo } from "@/lib/youtube/types";
 const now = Date.parse("2026-09-12T12:00:00Z");
 const video = (
@@ -12,7 +17,7 @@ const video = (
   id,
   views,
   categoryId,
-  title: "Music",
+  title: "Lofi Music",
   publishedAt: new Date(now - days * 86400000).toISOString(),
   channelId: "",
   channelTitle: "",
@@ -119,4 +124,32 @@ describe("music discovery and ranking", () => {
     ).toBe(400);
     expect(fetch).not.toHaveBeenCalled();
   });
+});
+
+it("filters non-English songs and broad non-lofi matches before sorting", () => {
+  const item = video("sample", "100", 1);
+  expect(
+    matchesMusicGenre(
+      { ...item, title: "Official MV", defaultAudioLanguage: "ko" },
+      "uk-us",
+    ),
+  ).toBe(false);
+  expect(
+    matchesMusicGenre(
+      { ...item, title: "Official MV", defaultAudioLanguage: "en-US" },
+      "uk-us",
+    ),
+  ).toBe(true);
+  expect(
+    matchesMusicGenre({ ...item, title: "English pop songs" }, "uk-us"),
+  ).toBe(true);
+  expect(
+    matchesMusicGenre({ ...item, title: "Relax House Radio" }, "lofi"),
+  ).toBe(false);
+  expect(
+    matchesMusicGenre(
+      { ...item, title: "1 AM study session [lofi hip hop]" },
+      "lofi",
+    ),
+  ).toBe(true);
 });

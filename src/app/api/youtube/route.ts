@@ -4,6 +4,7 @@ import {
   musicGenre,
   musicQuery,
   rankMusic,
+  matchesMusicGenre,
 } from "@/lib/youtube/music";
 import type { YoutubeResult, YoutubeVideo } from "@/lib/youtube/types";
 
@@ -41,6 +42,8 @@ const snippet = z.object({
   description: z.string().default(""),
   channelId: z.string().default(""),
   categoryId: z.string().optional(),
+  defaultAudioLanguage: z.string().optional(),
+  defaultLanguage: z.string().optional(),
   channelTitle: z.string().default(""),
   publishedAt: z.string().default(""),
   thumbnails: z.record(z.string(), z.object({ url: z.string() })).default({}),
@@ -243,9 +246,10 @@ export async function GET(request: Request) {
         nextPageToken = data.nextPageToken;
       }
       result = {
-        items: rankMusic(videos, p.order).filter(
-          (video) => video.id !== p.exclude,
-        ),
+        items: rankMusic(
+          videos.filter((video) => matchesMusicGenre(video, genre.id)),
+          p.order,
+        ).filter((video) => video.id !== p.exclude),
         nextPageToken,
       };
     } else if (p.mode === "popular") {

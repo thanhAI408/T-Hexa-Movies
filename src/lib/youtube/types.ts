@@ -2,6 +2,7 @@ export interface YoutubeVideo {
   id: string; title: string; description: string; thumbnail: string;
   channelId: string; channelTitle: string; publishedAt: string;
   categoryId?: string; views?: string; duration?: string; channelThumbnail?: string;
+  defaultAudioLanguage?: string; defaultLanguage?: string;
 }
 export interface YoutubeResult {
   items: YoutubeVideo[]; nextPageToken?: string;
